@@ -1,0 +1,90 @@
+@startuml
+skinparam style monochrome
+skinparam shadowing false
+
+package "Game Framework (Core)" {
+    class Game {
+        - state_manager: StateManager
+        - asset_manager: AssetManager
+        - input_manager: InputManager
+        + run()
+    }
+
+    class StateManager {
+        - states: Stack<BasePhase>
+        + push_state(state: BasePhase)
+        + pop_state()
+        + update(dt: float)
+        + draw(screen: Surface)
+    }
+
+    abstract class BasePhase {
+        # game: Game
+        + enter()
+        + exit()
+        + update(dt: float)
+        + draw(screen: Surface)
+    }
+}
+
+package "Entities & Components System" {
+    class BaseEntity {
+        - components: Map<Type, Component>
+        + add_component(c: Component)
+        + get_component(type: Type): Component
+        + update(dt: float)
+    }
+
+    abstract class Component {
+        # owner: BaseEntity
+        + update(dt: float)
+    }
+
+    class MovableComponent {
+        + velocity: Vector2
+        + speed: float
+        + update(dt)
+    }
+
+    class SpriteComponent {
+        + image: Surface
+        + rect: Rect
+        + update(dt)
+    }
+}
+
+package "Game States (Phases)" {
+    class LaunchPhase << (S,#FF7700) State >>
+    class TopDownPhase << (S,#FF7700) State >>
+    class PlatformerPhase << (S,#FF7700) State >>
+    class PausePhase << (S,#FF7700) State >>
+}
+
+package "Project Metadata & Config" {
+    class GitConfig << (F,#A9A9A9) File >> {
+        + remote_origin: "Terrako76/KKRE-pygame-esir-project-Test"
+        + remote_upstream: "Arckedo/KKRE-pygame-esir-project"
+        + current_branch: "Test"
+    }
+}
+
+' Relations de structure
+Game *-- StateManager
+Game *-- AssetManager
+Game *-- InputManager
+
+StateManager o-- BasePhase
+BasePhase <|-- LaunchPhase
+BasePhase <|-- TopDownPhase
+BasePhase <|-- PlatformerPhase
+BasePhase <|-- PausePhase
+
+' Relations ECS
+BaseEntity "1" *-- "*" Component
+Component <|-- MovableComponent
+Component <|-- SpriteComponent
+
+' Lien avec les fichiers de configuration détectés
+LaunchPhase ..> GitConfig : "Initializes project from" 
+
+@enduml

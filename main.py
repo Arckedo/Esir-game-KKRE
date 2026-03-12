@@ -1,0 +1,98 @@
+import ctypes
+import os
+import platform
+
+import pygame
+
+import core.configs.settings as stgs
+from core.state_manager import StateManager
+from states.phase.platformer import PlatformerPhase
+
+# --- DPI Awareness (Windows) ---
+if platform.system() == "Windows":
+    try:
+        # On dit à Windows de NE PAS toucher à la mise à l'échelle
+        ctypes.windll.shcore.SetProcessDpiAwareness(1)
+    except Exception:
+        ctypes.windll.user32.SetProcessDPIAware()
+
+
+class Game:
+    """Classe orchestrant la boucle de jeu"""
+
+    def __init__(self) -> None:
+        pygame.init()
+
+        # Dimension interne du jeu
+        self.w, self.h = stgs.SCREEN_WIDTH, stgs.SCREEN_HEIGHT
+
+        # Configuration de l'écran pour le rendu.
+        self.screen = pygame.display.set_mode(
+            (self.w, self.h), pygame.FULLSCREEN | pygame.DOUBLEBUF | pygame.HWSURFACE
+        )
+
+        # Sert à conserver les bords nets des Pixels Arts lors d'un redimensionnement
+        os.environ["SDL_RENDER_SCALE_QUALITY"] = "0"
+
+        # Initialisation du StateManager (Gestionnaire d'Etats, de scènes)
+        # On lance la première scène du jeu directement (push).
+        self.manager = StateManager()
+        self.manager.push(PlatformerPhase())
+
+        # Variables de temps pour la boucle de jeu
+        self.clock = pygame.time.Clock()  # Horloge limitant les FPS
+        self.dt = 0.0  # Delta time (utile pour la physique)
+        self.running = True  # Permet de laisser ouverte l'application
+
+        # Monitoring : Statistiques et performance
+        self.min_fps = 60.0
+        self.frame_count = 0
+
+    def run(self) -> None:
+        """Boucle de jeu principale"""
+        while self.running:
+            # ---------- CHRONOMETRIE -----------
+            self.dt = self.clock.tick(60) / 1000.0
+            current_fps = self.clock.get_fps()
+
+            # ---------- SURVEILLLAGE PERFORMANCE -----------
+            # On ignore les premières frames pour laisser au pc le temps de se stabiliser
+            self.frame_count += 1
+            if self.frame_count > 60:
+                if 0 < current_fps < self.min_fps:
+                    self.min_fps = current_fps
+
+            # Affiche les FPS dans la console, toutes les secondes.
+            if self.frame_count % 60 == 0:
+                print(f"FPS: {int(current_fps)} | Min: {int(self.min_fps)}")
+
+            # ---------- GESTION DES ÉVÉNEMENTS GLOBAUX -----------
+            events = pygame.event.get()
+            # Permet de quitter le jeu peut importe l'état/scène.
+            for event in events:
+                if event.type == pygame.QUIT:
+                    self.running = False
+
+            # ---------- LOGIQUE DES STATES ----------
+            # On récupère l'état actif et on lui délègue la logique et le rendu<
+            current_state = self.manager.current()
+            current_state.handle_events(events, self)
+            current_state.update(self)
+
+            # ---------- RENDU VISUEL ----------
+
+            # On nettoie l'écran
+            self.screen.fill((0, 0, 0))
+
+            # On dessine la scène/ l'état
+            current_state.draw(self.screen)
+
+            # Envoie l'image à pygame pour l'afficher
+            pygame.display.flip()
+
+        # Ferme proprement Pygame
+        pygame.quit()
+
+
+if __name__ == "__main__":
+    Game().run()

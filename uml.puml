@@ -1,0 +1,151 @@
+﻿@startuml
+skinparam style monochrome
+skinparam shadowing false
+
+package "core" {
+  abstract class GameState {
+    +handle_events(events, game)
+    +update(game)
+    +draw(screen: pygame.Surface)
+  }
+
+  abstract class Command {
+    +execute(target)
+  }
+
+  class StateManager {
+    -states: list
+    +push(state)
+    +pop()
+    +current()
+  }
+
+  class InputManager {
+    -key_map: dict
+    +get_commands(events)
+    +get_continuous_commands()
+    +call_commands(active_actions, action_dict, receiver)
+  }
+
+  class AssetManager {
+    {static} -_images: dict
+    {static} +get_image(name)
+  }
+
+  class Game {
+    -screen: pygame.Surface
+    -manager: StateManager
+    -clock: pygame.time.Clock
+    -dt: float
+    -running: bool
+    +run()
+  }
+}
+
+package "states" {
+  class TopDownPhase
+  class PlatformerPhase
+  class LaunchPhase
+  class PausePhase
+}
+
+package "commands" {
+  class MoveTopCommand
+  class MoveDownCommand
+  class MoveLeftCommand
+  class MoveRightCommand
+
+  class TogglePauseMenuCommand
+  class BackToPreviousStateCommand
+  class QuitGameCommand
+}
+
+package "entities" {
+  class BaseEntity
+  class Player
+  class PlayerTopDown
+  class PlayerPlateformer
+}
+
+package "entities.components" {
+  class MovableComponent
+  class SpriteComponent
+  class Animator
+  class Collider
+}
+
+package "core.configs" {
+  class settings <<module>>
+  class inputmap <<module>>
+  class commands_registry <<module>>
+}
+
+package "pygame" {
+  class "pygame.Surface" as PygameSurface
+  class "pygame.Rect" as PygameRect
+  class "pygame.Vector2" as PygameVector2
+  class "pygame.sprite.Sprite" as PygameSprite
+  class "pygame.sprite.Group" as PygameGroup
+  class "pygame.time.Clock" as PygameClock
+}
+
+' --- Héritage ---
+GameState <|-- TopDownPhase
+GameState <|-- PlatformerPhase
+GameState <|-- LaunchPhase
+GameState <|-- PausePhase
+
+Command <|-- MoveTopCommand
+Command <|-- MoveDownCommand
+Command <|-- MoveLeftCommand
+Command <|-- MoveRightCommand
+
+BaseEntity <|-- Player
+Player <|-- PlayerTopDown
+Player <|-- PlayerPlateformer
+
+PygameSprite <|-- BaseEntity
+
+' --- Agrégations / Compositions ---
+Game *-- StateManager
+Game o-- PygameClock
+Game o-- PygameSurface
+
+StateManager o-- GameState
+
+BaseEntity o-- MovableComponent
+BaseEntity o-- SpriteComponent
+BaseEntity o-- Animator
+BaseEntity o-- Collider
+
+MovableComponent --> BaseEntity : owner
+SpriteComponent --> BaseEntity : owner
+Animator --> BaseEntity : owner
+
+' --- Dépendances ---
+InputManager ..> Command : execute()
+TopDownPhase ..> InputManager
+PlatformerPhase ..> InputManager
+
+TopDownPhase ..> PlayerTopDown
+PlatformerPhase ..> PlayerPlateformer
+
+TopDownPhase ..> commands_registry
+PlatformerPhase ..> commands_registry
+
+Player ..> AssetManager
+Player ..> SpriteComponent
+Player ..> MovableComponent
+
+TogglePauseMenuCommand ..> PausePhase
+TogglePauseMenuCommand ..> Game
+BackToPreviousStateCommand ..> Game
+QuitGameCommand ..> Game
+
+' --- Pygame types utilisés ---
+BaseEntity ..> PygameRect
+MovableComponent ..> PygameVector2
+TopDownPhase ..> PygameGroup
+PlatformerPhase ..> PygameGroup
+
+@enduml

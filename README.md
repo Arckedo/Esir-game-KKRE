@@ -1,2 +1,2 @@
 # KKRE-pygame-esir-project
-ping
+2 ping

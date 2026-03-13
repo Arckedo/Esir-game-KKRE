@@ -1,6 +1,7 @@
 import pygame
 
 from core.asset_manager import AssetManager
+from core.sound_manager import SoundManager
 from entities.base_entity import BaseEntity
 from entities.components.animator import Animator
 from entities.components.movable import MovableComponent
@@ -61,6 +62,16 @@ class PlayerPlateformer(Player):
         self.movable = self.add_component("movable", MovableComponent(self, 700))
         self.facing_right = True
         self.air_time = 0.0
+        self.max_jumps = 2
+        self.jumps_left = self.max_jumps
+        self.jump_force = 800
+        self.roll_duration = 0.4
+        self.roll_cooldown_max = 0.35
+        self.roll_speed = 1000
+        self.roll_timer = 0.0
+        self.roll_cooldown = 0.0
+        self.is_rolling = False
+        self.roll_direction = 1
         self.shoot_cooldown = 0.0
         self.cooldown_max = 0.2
 
@@ -107,6 +118,20 @@ class PlayerPlateformer(Player):
                 load_scaled("player/jump/down"), 0.1
             ),
         }
+
+        roll_frames = load_scaled("player/roll/roll")
+        if not roll_frames:
+            # Fallback : supporte aussi un simple roll.png (1 frame) non découpable en 128x80.
+            roll_img = AssetManager.get_image("player/roll/roll")
+            if roll_img is not None:
+                roll_frames = [pygame.transform.scale(roll_img, (tw, th))]
+
+        if roll_frames:
+            self.anim_data["roll"] = AssetManager.create_animation_data(roll_frames, 0.05)
+        else:
+            # Fallback silencieux si la spritesheet de roulade n'est pas encore prête.
+            self.anim_data["roll"] = self.anim_data["run"]
+
         self.animator = Animator(self, self.anim_data)
 
     # --- Gestion des Commandes ---
@@ -117,10 +142,32 @@ class PlayerPlateformer(Player):
         self.movable.input_dir.x = 1
 
     def movetop(self) -> None:
-        self.movable.jump(800)
+        if self.jumps_left > 0:
+            self.movable.velocity.y = -self.jump_force
+            self.movable.on_ground = False
+            self.jumps_left -= 1
+            SoundManager.play("jump", volume=0.35)
 
     def movedown(self) -> None:
         self.movable.input_dir.y = 1
+
+    def roll(self) -> None:
+        """Déclenche une roulade courte au sol dans la direction du regard."""
+        if self.roll_timer > 0 or self.roll_cooldown > 0:
+            return
+
+        if not self.movable.on_ground:
+            return
+
+        if abs(self.movable.velocity.x) > 40:
+            self.roll_direction = 1 if self.movable.velocity.x > 0 else -1
+        else:
+            self.roll_direction = 1 if self.facing_right else -1
+
+        self.roll_timer = self.roll_duration
+        self.roll_cooldown = self.roll_cooldown_max
+        self.is_rolling = True
+        SoundManager.play("roll", volume=0.3)
 
     def shoot(self) -> None:
         """Gère le tir en direction de la souris avec offset caméra."""
@@ -134,10 +181,12 @@ class PlayerPlateformer(Player):
             bullet = Bullet(self.rect.centerx, self.rect.centery, world_mouse)
             self.phase.allsprites.add(bullet)
             self.shoot_cooldown = self.cooldown_max
+            SoundManager.play("shoot", volume=0.25)
 
     def take_damage(self, amount: int = 1, source_pos: pygame.Vector2 = None) -> bool:
         """Surcharge pour ajouter un recul (knockback) lors du choc."""
         if super().take_damage(amount):
+            SoundManager.play("hit", volume=0.4)
             if source_pos:
                 force = 500
                 self.movable.velocity.x = (
@@ -148,6 +197,18 @@ class PlayerPlateformer(Player):
         return False
 
     def update(self, dt: float) -> None:
+        if self.roll_cooldown > 0:
+            self.roll_cooldown -= dt
+
+        if self.roll_timer > 0:
+            self.roll_timer -= dt
+            self.is_rolling = True
+            if self.movable.on_ground:
+                self.movable.input_dir.x = self.roll_direction
+                self.movable.velocity.x = self.roll_direction * self.roll_speed
+        else:
+            self.is_rolling = False
+
         if self.shoot_cooldown > 0:
             self.shoot_cooldown -= dt
 
@@ -155,9 +216,14 @@ class PlayerPlateformer(Player):
 
         # 1. Mise à jour de l'état d'animation
         on_ground = getattr(self.movable, "on_ground", True)
+        if on_ground:
+            self.jumps_left = self.max_jumps
+
         self.air_time = 0.0 if on_ground else self.air_time + dt
 
-        if self.air_time > 0.1:
+        if self.is_rolling:
+            self.animator.set_state("roll")
+        elif self.air_time > 0.1:
             self.animator.set_state("jump" if self.movable.velocity.y < 0 else "fall")
         elif abs(self.movable.velocity.x) > 100:
             self.animator.set_state("run")

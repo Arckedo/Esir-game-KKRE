@@ -19,3 +19,8 @@ class MoveRightCommand(Command):
 class ShootCommand:
     def execute(self, receiver):
         receiver.shoot()
+
+
+class RollCommand(Command):
+    def execute(self, receiver):
+        receiver.roll()

@@ -5,6 +5,7 @@ import platform
 import pygame
 
 import core.configs.settings as stgs
+from core.sound_manager import SoundManager
 from core.state_manager import StateManager
 from states.phase.platformer import PlatformerPhase
 
@@ -22,6 +23,7 @@ class Game:
 
     def __init__(self) -> None:
         pygame.init()
+        SoundManager.setup()
 
         # Dimension interne du jeu
         self.w, self.h = stgs.SCREEN_WIDTH, stgs.SCREEN_HEIGHT

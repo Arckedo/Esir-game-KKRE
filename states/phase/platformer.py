@@ -76,13 +76,24 @@ class PlatformerPhase(GameState):
 
     def handle_events(self, events, game):
         """Gère les commandes système (Pause, Quit, etc.)."""
-        system_calls = self.input_manager.get_commands(events)
-        self.input_manager.call_commands(system_calls, SYSTEM_COMMANDS, game)
+        command_calls = self.input_manager.get_commands(events)
+
+        # Le saut est traité en appui unique (KEYDOWN) pour éviter le multi-déclenchement.
+        if "top" in command_calls:
+            TD_MOVE_COMMANDS["top"].execute(self.player)
+        if "roll" in command_calls:
+            TD_MOVE_COMMANDS["roll"].execute(self.player)
+
+        self.input_manager.call_commands(command_calls, SYSTEM_COMMANDS, game)
 
     def update(self, game):
         """Met à jour la logique du jeu."""
         # 1. Inputs Joueur
-        move_calls = self.input_manager.get_continuous_commands()
+        move_calls = [
+            action
+            for action in self.input_manager.get_continuous_commands()
+            if action not in {"top", "roll"}
+        ]
         self.input_manager.call_commands(move_calls, TD_MOVE_COMMANDS, self.player)
 
         # 2. Mise à jour des entités et curseur

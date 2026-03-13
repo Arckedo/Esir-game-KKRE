@@ -14,7 +14,7 @@ class MovableComponent:
 
         # Lissage (Lerp) pour l'accélération et le freinage
         self.acceleration_smooth = 0.15
-        self.friction_smooth = 0.1
+        self.friction_smooth = 0.2
 
         self.input_dir = pygame.Vector2(0, 0)
         self.gravity = 2000

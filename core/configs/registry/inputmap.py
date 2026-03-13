@@ -14,6 +14,7 @@ PLATFORMER_PHASE_KEYS = {
     "left": pygame.K_q,
     "right": pygame.K_d,
     "down": pygame.K_s,  
+    "roll": pygame.K_LSHIFT,
     "pause": pygame.K_x,
     "quit": pygame.K_p,
     "shoot" : "MOUSE_LEFT",

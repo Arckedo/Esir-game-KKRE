@@ -2,6 +2,8 @@ import math
 
 import pygame
 
+from entities.platformer.button import Button
+from entities.platformer.debug import draw_text
 from core.configs.registry.commands import SYSTEM_COMMANDS, TD_MOVE_COMMANDS
 from core.configs.registry.inputmap import PLATFORMER_PHASE_KEYS
 from core.engine import GameState
@@ -15,7 +17,6 @@ from entities.platformer.ennemy import CasterEnemy
 from entities.platformer.player import PlayerPlateformer
 from UI.ui_element import UIHealthBar
 
-
 class PlatformerPhase(GameState):
     """Gère la logique et le rendu du mode plateforme."""
 
@@ -26,6 +27,17 @@ class PlatformerPhase(GameState):
         self.enemy_projectiles = pygame.sprite.Group()
         self.input_manager = InputManager(PLATFORMER_PHASE_KEYS)
         self.debug_mode = False
+        self.debug_mode_text = False
+        self.level_debug_surface = None
+
+        # Bouton de debug: inactif au démarrage, actif après clic.
+        self._debug_button_inactive_img = pygame.image.load(
+            "assets/images/debug_non_active.png"
+        ).convert_alpha()
+        self._debug_button_active_img = pygame.image.load(
+            "assets/images/debug_active.png"
+        ).convert_alpha()
+        self.debug_button = Button(100, 200, self._debug_button_inactive_img, 0.2)
 
         # --- Initialisation ---
         self._setup_entities()
@@ -53,12 +65,21 @@ class PlatformerPhase(GameState):
         self.loader = LevelLoader(self)
         try:
             self.loader.load_level("assets/levels/world.ldtk")
+            self._rebuild_level_debug_surface()
             if hasattr(self, "spawn_pos"):
                 self.player.rect.midbottom = self.spawn_pos
                 self.player.movable.pos = pygame.Vector2(self.player.rect.topleft)
             print("Level loaded successfully.")
         except Exception as e:
             print(f"Level Load Error: {e}")
+
+    def _rebuild_level_debug_surface(self):
+        """Construit une seule fois la surcouche debug du masque de collision."""
+        self.level_debug_surface = None
+        if hasattr(self, "level_mask"):
+            self.level_debug_surface = self.level_mask.to_surface(
+                setcolor=(255, 0, 0, 80), unsetcolor=(0, 0, 0, 0)
+            )
 
     def _setup_background(self):
         """Configure les couches de parallaxe."""
@@ -113,7 +134,7 @@ class PlatformerPhase(GameState):
         for projectile in hits:
             self.player.take_damage(1, source_pos=projectile.rect.center)
 
-    def draw(self, screen):
+    def draw(self, screen, current_fps):
         """Rendu de la phase."""
         screen.fill((20, 20, 90))
 
@@ -129,15 +150,45 @@ class PlatformerPhase(GameState):
             screen.blit(self.level_image, -render_offset)
 
         self.allsprites.custom_draw(screen, render_offset, debug=self.debug_mode)
-        self._draw_debug(screen, render_offset)
+        self._draw_debug(screen, render_offset,current_fps)
 
         self.health_bar.draw(screen)
         self.cursor.draw(screen)
 
-    def _draw_debug(self, screen, offset):
+    def _draw_debug(self, screen, offset, current_fps):
         """Affiche les masques de collision si le mode debug est actif."""
-        if self.debug_mode and hasattr(self, "level_mask"):
-            level_debug = self.level_mask.to_surface(
-                setcolor=(255, 0, 0, 80), unsetcolor=(0, 0, 0, 0)
+        if self.debug_button.draw(screen):
+            self.debug_mode = not self.debug_mode
+            self.debug_mode_text = self.debug_mode
+
+            if self.debug_mode:
+                self.debug_button.image = pygame.transform.scale(
+                    self._debug_button_active_img,
+                    (
+                        int(self._debug_button_active_img.get_width() * 0.2),
+                        int(self._debug_button_active_img.get_height() * 0.2),
+                    ),
+                )
+            else:
+                self.debug_button.image = pygame.transform.scale(
+                    self._debug_button_inactive_img,
+                    (
+                        int(self._debug_button_inactive_img.get_width() * 0.2),
+                        int(self._debug_button_inactive_img.get_height() * 0.2),
+                    ),
+                )
+
+            self.debug_button.rect = self.debug_button.image.get_rect(
+                topleft=self.debug_button.rect.topleft
             )
-            screen.blit(level_debug, -offset)
+
+        if self.debug_mode and self.level_debug_surface is not None:
+            screen.blit(self.level_debug_surface, -offset)
+        if self.debug_mode_text:
+            draw_text(screen, f"Player Pos: {self.player.rect.topleft}", (100, 100))
+            draw_text(screen, f"Player HP: {self.player.hp}", (100, 120))
+            draw_text(screen, f"Player Invulnerable: {self.player.invulnerable}", (100, 140))
+            draw_text(screen, f"roll countdown: {self.player.roll_cooldown}", (100, 160))
+            draw_text(screen, f"FPS:{current_fps}", (100, 180))
+
+

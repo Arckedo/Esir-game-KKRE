@@ -65,7 +65,7 @@ class PlayerPlateformer(Player):
         self.max_jumps = 2
         self.jumps_left = self.max_jumps
         self.jump_force = 800
-        self.roll_duration = 0.4
+        self.roll_duration = 0.3
         self.roll_cooldown_max = 0.35
         self.roll_speed = 1000
         self.roll_timer = 0.0

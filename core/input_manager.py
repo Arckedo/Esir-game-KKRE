@@ -18,6 +18,7 @@ class InputManager:
         """
         self.key_map = key_map
         self.MOUSE_LEFT = "MOUSE_LEFT"
+        self.debug_button = Button(100, 200, pygame.image.load("assets/images/debug.png").convert_alpha(), 0.1)
 
     def get_commands(self, events):
         """
@@ -89,3 +90,19 @@ class InputManager:
             command = action_dict.get(action_name)
             if command:
                 command.execute(receiver)
+
+
+class Button:
+    def __init__(self, x, y, image, scale):
+        self.image = image
+        self.scale = scale
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+        return True
+
+    def is_pressed(self):
+        return True

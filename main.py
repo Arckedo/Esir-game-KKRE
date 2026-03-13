@@ -55,18 +55,18 @@ class Game:
         while self.running:
             # ---------- CHRONOMETRIE -----------
             self.dt = self.clock.tick(60) / 1000.0
-            current_fps = self.clock.get_fps()
+            self.current_fps = self.clock.get_fps()
 
             # ---------- SURVEILLLAGE PERFORMANCE -----------
             # On ignore les premières frames pour laisser au pc le temps de se stabiliser
             self.frame_count += 1
             if self.frame_count > 60:
-                if 0 < current_fps < self.min_fps:
-                    self.min_fps = current_fps
+                if 0 < self.current_fps < self.min_fps:
+                    self.min_fps = self.current_fps
 
             # Affiche les FPS dans la console, toutes les secondes.
             if self.frame_count % 60 == 0:
-                print(f"FPS: {int(current_fps)} | Min: {int(self.min_fps)}")
+                print(f"FPS: {int(self.current_fps)} | Min: {int(self.min_fps)}")
 
             # ---------- GESTION DES ÉVÉNEMENTS GLOBAUX -----------
             events = pygame.event.get()
@@ -87,7 +87,7 @@ class Game:
             self.screen.fill((0, 0, 0))
 
             # On dessine la scène/ l'état
-            current_state.draw(self.screen)
+            current_state.draw(self.screen, self.current_fps)
 
             # Envoie l'image à pygame pour l'afficher
             pygame.display.flip()

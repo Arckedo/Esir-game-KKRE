@@ -15,7 +15,7 @@ class EnemyProjectile(pygame.sprite.Sprite):
         self.collide_with_walls = collide_with_walls  # Le petit levier pour choisir !
 
         self.image = pygame.Surface((10, 10), pygame.SRCALPHA)
-        pygame.draw.circle(self.image, (200, 50, 255), (5, 5), 5)
+        pygame.draw.circle(self.image, (200, 0, 0), (5, 5), 5)
         self.rect = self.image.get_rect(center=(x, y))
 
         # Vecteur de direction basé sur l'angle de tir

@@ -72,6 +72,10 @@ class PlayerPlateformer(Player):
         self.roll_cooldown = 0.0
         self.is_rolling = False
         self.roll_direction = 1
+        self.roll_buffer_time = 0.12
+        self.roll_buffer_timer = 0.0
+        self.ground_grace_time = 0.08
+        self.ground_grace_timer = 0.0
         self.shoot_cooldown = 0.0
         self.cooldown_max = 0.2
 
@@ -152,11 +156,8 @@ class PlayerPlateformer(Player):
         self.movable.input_dir.y = 1
 
     def roll(self) -> None:
-        """Déclenche une roulade courte au sol dans la direction du regard."""
-        if self.roll_timer > 0 or self.roll_cooldown > 0:
-            return
-
-        if not self.movable.on_ground:
+        """Demande une roulade. La demande est bufferisée quelques ms."""
+        if self.roll_timer > 0:
             return
 
         if abs(self.movable.velocity.x) > 40:
@@ -164,8 +165,23 @@ class PlayerPlateformer(Player):
         else:
             self.roll_direction = 1 if self.facing_right else -1
 
+        self.roll_buffer_timer = self.roll_buffer_time
+
+        if self._can_start_roll():
+            self._start_roll()
+
+    def _can_start_roll(self) -> bool:
+        """Vérifie si la roulade peut démarrer maintenant."""
+        if self.roll_timer > 0 or self.roll_cooldown > 0:
+            return False
+
+        return self.movable.on_ground or self.ground_grace_timer > 0
+
+    def _start_roll(self) -> None:
+        """Démarre la roulade et consomme la demande bufferisée."""
         self.roll_timer = self.roll_duration
         self.roll_cooldown = self.roll_cooldown_max
+        self.roll_buffer_timer = 0.0
         self.is_rolling = True
         SoundManager.play("roll", volume=0.3)
 
@@ -200,10 +216,21 @@ class PlayerPlateformer(Player):
         if self.roll_cooldown > 0:
             self.roll_cooldown -= dt
 
+        if self.roll_buffer_timer > 0:
+            self.roll_buffer_timer -= dt
+
+        if self.movable.on_ground:
+            self.ground_grace_timer = self.ground_grace_time
+        elif self.ground_grace_timer > 0:
+            self.ground_grace_timer -= dt
+
+        if self.roll_buffer_timer > 0 and self._can_start_roll():
+            self._start_roll()
+
         if self.roll_timer > 0:
             self.roll_timer -= dt
             self.is_rolling = True
-            if self.movable.on_ground:
+            if self.movable.on_ground or self.ground_grace_timer > 0:
                 self.movable.input_dir.x = self.roll_direction
                 self.movable.velocity.x = self.roll_direction * self.roll_speed
         else:

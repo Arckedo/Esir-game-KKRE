@@ -9,15 +9,17 @@ class UIHealthBar:
     Gère l'affichage du portrait (cœur), du panneau de fond et de la barre de vie.
     """
 
-    def __init__(self, player):
+    def __init__(self, player, left, top):
         self.player = player
+        self.left = left
+        self.top = top
 
         # --- Paramètres de mise en page ---
         self.bg_ui_scale = 3.0
         self.content_scale = 1.0
 
-        self.left_margin = 10  # Décalage horizontal depuis le bord
-        self.panel_y = 5  # Décalage vertical depuis le haut
+        self.left_margin = self.left  # Décalage horizontal depuis le bord
+        self.panel_y = self.top  # Décalage vertical depuis le haut
 
         # Ajustements précis du contenu à l'intérieur du parchemin/panneau
         self.offset_x = 78

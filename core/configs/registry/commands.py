@@ -8,6 +8,7 @@ TD_MOVE_COMMANDS = {
     "down": MoveDownCommand(),
     "roll": RollCommand(),
     "shoot": ShootCommand(),
+    "crouch": CrouchCommand(),
 }
 
 SYSTEM_COMMANDS = {

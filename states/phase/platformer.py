@@ -25,8 +25,8 @@ class PlatformerPhase(GameState):
         self.allsprites = CameraGroup()
         self.solids = pygame.sprite.Group()
         self.enemy_projectiles = pygame.sprite.Group()
-        self.input_manager_p1 = InputManager(PLATFORMER_PHASE_KEYS_PLAYER1)
-        self.input_manager_p2 = InputManager(PLATFORMER_PHASE_KEYS_PLAYER2)
+        self.input_manager_p1 = InputManager(PLATFORMER_PHASE_KEYS_PLAYER1, joystick_index=0)
+        self.input_manager_p2 = InputManager(PLATFORMER_PHASE_KEYS_PLAYER2, joystick_index=1)
         self.debug_mode = False
         self.debug_mode_text = False
         self.level_debug_surface = None
@@ -136,6 +136,10 @@ class PlatformerPhase(GameState):
 
     def update(self, game):
         """Met à jour la logique du jeu."""
+        # Réinitialisation frame-based: les commandes continues peuvent réactiver crouch.
+        self.player1.is_crouching = False
+        self.player2.is_crouching = False
+
         # 1. Inputs Joueurs (appuis continus)
         move_calls_p1 = [
             action

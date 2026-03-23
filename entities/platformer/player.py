@@ -78,6 +78,10 @@ class PlayerPlateformer(Player):
         self.ground_grace_timer = 0.0
         self.shoot_cooldown = 0.0
         self.cooldown_max = 0.2
+        self.shoot_anim_duration = 0.24
+        self.shoot_anim_timer = 0.0
+        self.shoot_run_anim_timer = 0.0
+        self.is_crouching = False
 
         # --- Initialisation Visuelle ---
         self._setup_animations()
@@ -86,8 +90,14 @@ class PlayerPlateformer(Player):
         self.shiver_offset = pygame.Vector2(0, 0)
 
         # Définition de la hitbox physique (Rect + Masque de collision)
-        self.rect = pygame.Rect(x, y, 40, 60)
-        my_hitbox = MaskFactory.capsule_mask(40, 60)
+        # Le point (x, y) est au bas-milieu du joueur, pas au haut-gauche
+        self.rect = pygame.Rect(0, 0, 40, 60)
+        self.rect.midbottom = (x, y)
+        
+        # Hitbox standard et réduite pour le crouch
+        self.normal_hitbox = MaskFactory.capsule_mask(40, 60)
+        self.crouch_hitbox = MaskFactory.capsule_mask(40, 40)  # Hitbox réduite en hauteur
+        my_hitbox = self.normal_hitbox
 
         self.sprite_comp = self.add_component(
             "sprite",
@@ -120,6 +130,15 @@ class PlayerPlateformer(Player):
             ),
             "fall": AssetManager.create_animation_data(
                 load_scaled("player/jump/down"), 0.1
+            ),
+            "shoot": AssetManager.create_animation_data(
+                load_scaled("player/idle/idle_shoot_gun"), 0.05
+            ),
+            "shoot_run": AssetManager.create_animation_data(
+                load_scaled("player/running/running_shoot_gun"), 0.05
+            ),
+            "crouch": AssetManager.create_animation_data(
+                load_scaled("player/crouch/crouch"), 0.05
             ),
         }
 
@@ -197,7 +216,25 @@ class PlayerPlateformer(Player):
             bullet = Bullet(self.rect.centerx, self.rect.centery, world_mouse)
             self.phase.allsprites.add(bullet)
             self.shoot_cooldown = self.cooldown_max
-            SoundManager.play("shoot", volume=0.25)
+            #Tir en courant: on déclenche l'état shoot_run, sinon shoot classique.
+            if abs(self.movable.velocity.x) > 100 and self.air_time <= 0.1:
+                self.shoot_run_anim_timer = self.shoot_anim_duration
+                self.shoot_anim_timer = 0.0
+            else:
+                self.shoot_anim_timer = self.shoot_anim_duration
+                self.shoot_run_anim_timer = 0.0
+            
+
+            SoundManager.play("shoot", volume=2)
+
+    def crouch(self) -> None:
+        """Active l'état de crouch tant que la touche est maintenue."""
+        if self.movable.on_ground:
+            self.is_crouching = True
+
+    def uncrouch(self) -> None:
+        """Désactive le crouch quand on relâche la touche."""
+        self.is_crouching = False
 
     def take_damage(self, amount: int = 1, source_pos: pygame.Vector2 = None) -> bool:
         """Surcharge pour ajouter un recul (knockback) lors du choc."""
@@ -239,6 +276,12 @@ class PlayerPlateformer(Player):
         if self.shoot_cooldown > 0:
             self.shoot_cooldown -= dt
 
+        if self.shoot_anim_timer > 0:
+            self.shoot_anim_timer -= dt
+
+        if self.shoot_run_anim_timer > 0:
+            self.shoot_run_anim_timer -= dt
+        
         super().update(dt)
 
         # 1. Mise à jour de l'état d'animation
@@ -248,14 +291,24 @@ class PlayerPlateformer(Player):
 
         self.air_time = 0.0 if on_ground else self.air_time + dt
 
-        if self.is_rolling:
+        if self.shoot_run_anim_timer > 0:
+            self.animator.set_state("shoot_run")
+        elif self.shoot_anim_timer > 0:
+            self.animator.set_state("shoot")
+        elif self.is_rolling:
             self.animator.set_state("roll")
         elif self.air_time > 0.1:
             self.animator.set_state("jump" if self.movable.velocity.y < 0 else "fall")
         elif abs(self.movable.velocity.x) > 100:
             self.animator.set_state("run")
+        elif self.is_crouching:
+            self.animator.set_state("crouch")
+            # Applique la hitbox réduite pendant le crouch
+            self.sprite_comp.mask = self.crouch_hitbox
         else:
             self.animator.set_state("idle")
+            # Restore normal hitbox quand pas de crouch
+            self.sprite_comp.mask = self.normal_hitbox
 
         self.animator.update(dt)
 

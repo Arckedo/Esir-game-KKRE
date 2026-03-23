@@ -24,3 +24,8 @@ class ShootCommand:
 class RollCommand(Command):
     def execute(self, receiver):
         receiver.roll()
+
+
+class CrouchCommand(Command):
+    def execute(self, receiver):
+        receiver.crouch()

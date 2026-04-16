@@ -62,3 +62,54 @@ class SoundManager:
 
         sound.set_volume(max(0.0, min(1.0, volume)))
         sound.play()
+
+    # ajout de méthodes pour la musique de fond, qui utilise une API différente de pygame.mixer.music
+
+    # méthode pour charger la musique de fond, avec support de plusieurs extensions (insirer de la méthode get_sound)
+    @classmethod
+    def load_music(cls, name: str) -> bool:
+        """Charge une musique depuis assets/sounds/<name>.<ext>."""
+        if not cls._enabled:
+            print(f"Sound disabled, cannot load music '{name}'")
+            return False
+
+        path = None
+        for ext in cls._extensions:
+            candidate = os.path.join("assets", "sounds", f"{name}{ext}")
+            if os.path.exists(candidate):
+                path = candidate
+                break
+
+        if path is None:
+            print(f"Music file '{name}' not found in assets/sounds/")
+            return False
+
+        try:
+            pygame.mixer.music.load(path)
+            print(f"Music '{name}' loaded successfully from {path}")
+            return True
+        except pygame.error as e:
+            print(f"Failed to load music '{name}': {e}")
+            return False
+
+    # méthode pour jouer la musique de fond, avec option de boucle (inspirer de la méthode play)
+    @classmethod
+    def play_music(cls, name: str, volume: float = 1.0, loop: bool = False) -> None:
+        """Joue la musique chargée. Si loop=True, boucle indéfiniment."""
+        if not cls._enabled:
+            print("Sound disabled, cannot play music")
+            return
+
+        if cls.load_music(name):
+            pygame.mixer.music.set_volume(max(0.0, min(1.0, volume)))
+            pygame.mixer.music.play(-1 if loop else 0)
+            print(f"Playing music '{name}' with loop={loop}")
+        else:
+            print(f"Could not load music '{name}', not playing")
+
+    # méthode pour arrêter la musique en cours
+    @classmethod
+    def stop_music(cls) -> None:
+        """Arrête la musique en cours."""
+        if cls._enabled:
+            pygame.mixer.music.stop()

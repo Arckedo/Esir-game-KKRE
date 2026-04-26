@@ -1,7 +1,7 @@
 import math
 
 import pygame
-
+from core.sound_manager import SoundManager
 from entities.platformer.button import Button
 from entities.platformer.debug import draw_text
 from core.configs.registry.commands import SYSTEM_COMMANDS, TD_MOVE_COMMANDS
@@ -185,6 +185,16 @@ class PlatformerPhase(GameState):
         )
         for projectile in hits2:
             self.player2.take_damage(1, source_pos=projectile.rect.center)
+
+        #collisions entre joueurs c quand mm le coeur du jeu
+        hits_between_players = pygame.sprite.collide_mask(self.player1, self.player2)
+        if hits_between_players:
+            # On peut choisir d'infliger des dégâts à l'un ou l'autre, ou les deux.
+            self.player1.take_damage(1, source_pos=self.player2.rect.center)
+            self.player2.take_damage(1, source_pos=self.player1.rect.center)
+            SoundManager.play("shoot", volume=2)
+
+
 
     def draw(self, screen, current_fps):
         """Rendu de la phase."""

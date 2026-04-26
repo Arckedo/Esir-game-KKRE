@@ -241,9 +241,10 @@ class PlayerPlateformer(Player):
         if super().take_damage(amount):
             SoundManager.play("hit", volume=0.4)
             if source_pos:
+                source_x = source_pos.x if hasattr(source_pos, "x") else source_pos[0]
                 force = 500
                 self.movable.velocity.x = (
-                    -force if source_pos.x > self.rect.centerx else force
+                    -force if source_x > self.rect.centerx else force
                 )
                 self.movable.velocity.y = -350
             return True

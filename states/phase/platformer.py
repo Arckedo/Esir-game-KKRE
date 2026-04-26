@@ -1,5 +1,5 @@
 import math
-
+import os
 import pygame
 from core.sound_manager import SoundManager
 from entities.platformer.button import Button
@@ -45,6 +45,12 @@ class PlatformerPhase(GameState):
         self._setup_world()
         self._setup_background()
         self.cursor = Cursor("crosshair")
+
+    # debut de la phase
+    def enter(self):
+        """Jouer musique de jeu"""
+        print("Entering PlatformerPhase, playing music...")
+        SoundManager.play_music("musique_jeu", volume=0.25, loop=True)
 
     def _setup_entities(self):
         """Initialise le joueur, les ennemis et l'UI."""
@@ -286,4 +292,7 @@ class PlatformerPhase(GameState):
             draw_text(screen, f"roll countdown: {self.player.roll_cooldown}", (100, 180))
             draw_text(screen, f"FPS:{current_fps}", (100, 200))
 
-
+    #fin de la phase
+    def exit(self):
+        """Arrêter la musique de jeu"""
+        SoundManager.stop_music()

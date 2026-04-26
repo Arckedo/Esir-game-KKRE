@@ -16,6 +16,10 @@ class StateManager:
             state: L'instance de la phase à ajouter (ex: TopDownPhase())
         """
         self.states.append(state)
+        
+        # Si l'état a une méthode 'enter', on l'appelle pour signaler qu'il devient actif
+        if hasattr(state, 'enter'):
+            state.enter()
 
     def pop(self):
         """
@@ -23,7 +27,10 @@ class StateManager:
         Garantit qu'il reste tjrs au moins un état dans la pile
         """
         if len(self.states) > 1:
-            self.states.pop()
+            # Si l'état a une méthode 'exit', on l'appelle avant de le retirer
+            popped_state = self.states.pop()
+            if hasattr(popped_state, 'exit'):
+                popped_state.exit()
 
     def current(self):
         """

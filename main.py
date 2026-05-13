@@ -115,6 +115,8 @@ class Game:
             # Envoie l'image à pygame pour l'afficher
             pygame.display.flip()
 
+            
+
         # Ferme proprement Pygame
         pygame.quit()
 

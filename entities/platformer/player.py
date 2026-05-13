@@ -85,8 +85,7 @@ class PlayerPlateformer(Player):
         self.shoot_anim_timer = 0.0
         self.shoot_run_anim_timer = 0.0
         self.is_crouching = False
-        if skin_variant == "player_red":
-            self.tbag_nombre = 0  
+        self.tbag_nombre = 0 
 
         # --- Initialisation Visuelle ---
         self._setup_animations()
@@ -260,6 +259,8 @@ class PlayerPlateformer(Player):
         return False
 
     def update(self, dt: float) -> None:
+        self.jeu_gagne()
+
         if self.roll_cooldown > 0:
             self.roll_cooldown -= dt
 
@@ -349,3 +350,10 @@ class PlayerPlateformer(Player):
         """Permet de changer le skin du joueur en cours de jeu."""
         self.skin_variant = new_skin
         self._setup_animations()
+
+    def jeu_gagne(self):
+        if self.tbag_nombre >= 50:
+            if hasattr(self, "phase") and self.phase is not None:
+                self.phase.victory_reached = True
+            return True
+        return False

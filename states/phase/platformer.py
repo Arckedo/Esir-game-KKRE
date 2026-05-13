@@ -30,6 +30,7 @@ class PlatformerPhase(GameState):
         self.debug_mode = False
         self.debug_mode_text = False
         self.level_debug_surface = None
+        self.victory_reached = False
 
         # Bouton de debug: inactif au démarrage, actif après clic.
         self._debug_button_inactive_img = pygame.image.load(
@@ -259,11 +260,16 @@ class PlatformerPhase(GameState):
         self._draw_debug_ui(screen, current_fps)
         self.health_bar1.draw(screen)
         self.health_bar2.draw(screen)
+
+        if self.victory_reached:
+            self.affiche_victoire(screen)
+
         self.cursor.draw(screen)
 
         #Affichage tbag
         draw_text(screen, "gougougaga", (100, 200))
-        draw_text(screen, f"tbag nombre: {self.player1.tbag_nombre}", (100, 220))
+        draw_text(screen, f"Joueur 1: {self.player1.tbag_nombre}", (100, 220))
+        draw_text(screen, f"Joueur 2: {self.player2.tbag_nombre}", (100, 240))
 
     def _draw_world_debug(self, screen, offset):
         """Affiche les éléments de debug liés au monde (zoomables)."""
@@ -304,7 +310,12 @@ class PlatformerPhase(GameState):
             draw_text(screen, f"Player Invulnerable: {self.player.invulnerable}", (100, 160))
             draw_text(screen, f"roll countdown: {self.player.roll_cooldown}", (100, 180))
             draw_text(screen, f"FPS:{current_fps}", (100, 200))
-            
+
+    def affiche_victoire(self, screen):
+        """Affiche un message de victoire à l'écran."""
+        # Vous pouvez personnaliser cette méthode pour afficher une image, jouer une animation, etc.
+        draw_text(screen, "Victoire !", (400, 300), size=64, color=(255, 215, 0))   
+                 
     #fin de la phase
     def exit(self):
         """Arrêter la musique de jeu"""

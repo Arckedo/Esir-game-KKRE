@@ -53,6 +53,7 @@ class Game:
         # Variables de temps pour la boucle de jeu
         self.clock = pygame.time.Clock()  # Horloge limitant les FPS
         self.dt = 0.0  # Delta time (utile pour la physique)
+        self.time_scale = 1.0  # multiplicateur du temps (1.0 = normal)
         self.running = True  # Permet de laisser ouverte l'application
 
         # Monitoring : Statistiques et performance
@@ -63,7 +64,9 @@ class Game:
         """Boucle de jeu principale"""
         while self.running:
             # ---------- CHRONOMETRIE -----------
-            self.dt = self.clock.tick(60) / 1000.0
+            raw_dt = self.clock.tick(60) / 1000.0
+            # Applique un multiplicateur temporel pour le slow-motion
+            self.dt = raw_dt * getattr(self, "time_scale", 1.0)
             self.current_fps = self.clock.get_fps()
 
             # ---------- SURVEILLLAGE PERFORMANCE -----------

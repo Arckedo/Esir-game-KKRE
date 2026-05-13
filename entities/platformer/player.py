@@ -22,7 +22,7 @@ class Player(BaseEntity):
         # États de survie
         self.invulnerable = False
         self.last_hit_time = 0
-        self.invincibility_duration = 500  # ms
+        self.invincibility_duration = 1000  # ms
         self.flash_timer = 0.0
 
     def take_damage(self, amount: int = 1) -> bool:
@@ -62,7 +62,10 @@ class PlayerPlateformer(Player):
         self.skin_variant = skin_variant
 
         # --- Physique & Contrôles ---
-        self.movable = self.add_component("movable", MovableComponent(self, 700))
+        if self.skin_variant == "player_red":
+            self.movable = self.add_component("movable", MovableComponent(self, 700))
+        else:
+            self.movable = self.add_component("movable", MovableComponent(self, 500))
         self.facing_right = True
         self.air_time = 0.0
         self.max_jumps = 2

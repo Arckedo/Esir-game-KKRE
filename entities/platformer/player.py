@@ -85,6 +85,8 @@ class PlayerPlateformer(Player):
         self.shoot_anim_timer = 0.0
         self.shoot_run_anim_timer = 0.0
         self.is_crouching = False
+        if skin_variant == "player_red":
+            self.tbag_nombre = 0  
 
         # --- Initialisation Visuelle ---
         self._setup_animations()
@@ -234,8 +236,10 @@ class PlayerPlateformer(Player):
 
     def crouch(self) -> None:
         """Active l'état de crouch tant que la touche est maintenue."""
-        if self.movable.on_ground:
+        if self.skin_variant == "player_red" and self.movable.on_ground:
             self.is_crouching = True
+            self.tbag_nombre += 1
+
 
     def uncrouch(self) -> None:
         """Désactive le crouch quand on relâche la touche."""
@@ -340,3 +344,8 @@ class PlayerPlateformer(Player):
             self.facing_right = self.movable.velocity.x > 0
 
         self.sprite_comp.flip_x = not self.facing_right
+
+    def change_skin(self, new_skin: str) -> None:
+        """Permet de changer le skin du joueur en cours de jeu."""
+        self.skin_variant = new_skin
+        self._setup_animations()

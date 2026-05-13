@@ -55,13 +55,13 @@ class PlatformerPhase(GameState):
     def _setup_entities(self):
         """Initialise le joueur, les ennemis et l'UI."""
         # Joueur 1 = policier/skin bleu.
-        self.player1 = PlayerPlateformer(100, 964, "player_blue")
+        self.player1 = PlayerPlateformer(100, 964, "player_red")
         self.player1.phase = self
         self.player1.add_component("collision", CollisionComponent(self.player1))
         self.allsprites.add(self.player1)
 
         # Joueur 2 = voleur/skin rouge.
-        self.player2 = PlayerPlateformer(2400, 964, "player_red")
+        self.player2 = PlayerPlateformer(2400, 964, "player_blue")  
         self.player2.phase = self
         self.player2.add_component("collision", CollisionComponent(self.player2))
         self.allsprites.add(self.player2)
@@ -198,7 +198,14 @@ class PlatformerPhase(GameState):
             # On peut choisir d'infliger des dégâts à l'un ou l'autre, ou les deux.
             self.player1.take_damage(1, source_pos=self.player2.rect.center)
             self.player2.take_damage(1, source_pos=self.player1.rect.center)
-            SoundManager.play("shoot", volume=2)
+            if self.player1.skin_variant == "player_red":
+                self.player1.change_skin("player_blue")  # Change le skin du joueur1 en rouge
+                self.player2.change_skin("player_red")  # Change le skin du joueur2 en
+                SoundManager.play("shoot", volume=2)
+            else:
+                self.player1.change_skin("player_red")  # Change le skin du joueur1 en rouge
+                self.player2.change_skin("player_blue")  # Change le skin du joueur2 en
+                SoundManager.play("shoot", volume=2)
 
 
 
@@ -221,6 +228,8 @@ class PlatformerPhase(GameState):
             math.floor(world_center.x - view_w * 0.5),
             math.floor(world_center.y - view_h * 0.5),
         )
+
+       
 
         # Background non-zoome: il suit la camera mais conserve son echelle ecran.
         base_offset = pygame.Vector2(
@@ -251,6 +260,10 @@ class PlatformerPhase(GameState):
         self.health_bar1.draw(screen)
         self.health_bar2.draw(screen)
         self.cursor.draw(screen)
+
+        #Affichage tbag
+        draw_text(screen, "gougougaga", (100, 200))
+        draw_text(screen, f"tbag nombre: {self.player1.tbag_nombre}", (100, 220))
 
     def _draw_world_debug(self, screen, offset):
         """Affiche les éléments de debug liés au monde (zoomables)."""
@@ -291,7 +304,7 @@ class PlatformerPhase(GameState):
             draw_text(screen, f"Player Invulnerable: {self.player.invulnerable}", (100, 160))
             draw_text(screen, f"roll countdown: {self.player.roll_cooldown}", (100, 180))
             draw_text(screen, f"FPS:{current_fps}", (100, 200))
-
+            
     #fin de la phase
     def exit(self):
         """Arrêter la musique de jeu"""

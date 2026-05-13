@@ -25,13 +25,9 @@ class PlatformerPhase(GameState):
         self.allsprites = CameraGroup()
         self.solids = pygame.sprite.Group()
         self.enemy_projectiles = pygame.sprite.Group()
-        #GOUGOUG JE VEUX LE MENU
-        if utiliser_controleur():
-            self.input_manager_p1 = InputManager(PLATFORMER_PHASE_KEYS_CONTROLLER_PLAYER, joystick_index=0)
-            self.input_manager_p2 = InputManager(PLATFORMER_PHASE_KEYS_CONTROLLER_PLAYER, joystick_index=1)
-        else:
-            self.input_manager_p1 = InputManager(PLATFORMER_PHASE_KEYS_KEYBOARD_PLAYER, joystick_index=0)
-            self.input_manager_p2 = InputManager(PLATFORMER_PHASE_KEYS_KEYBOARD_PLAYER, joystick_index=1)
+        self.input_manager_p1 = InputManager(PLATFORMER_PHASE_KEYS_CONTROLLER_PLAYER, joystick_index=0)
+        self.input_manager_p2 = InputManager(PLATFORMER_PHASE_KEYS_CONTROLLER_PLAYER, joystick_index=1)
+
         self.debug_mode = False
         self.debug_mode_text = False
         self.level_debug_surface = None

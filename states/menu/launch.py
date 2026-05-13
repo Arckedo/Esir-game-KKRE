@@ -61,6 +61,8 @@ class LaunchPhase(GameState):
             game.manager.push(PlatformerPhase())
         if self.quit_button.draw(game.screen):
             game.running =False
+        if self.settings_button.draw(game.screen):
+            game.manager.push(PlatformerPhase()) 
 
 
     def draw(self, screen, current_fps=None):

@@ -9,20 +9,20 @@ TOPDOWN_PHASE_KEYS = {
     "quit": pygame.K_p,
 }
 
-PLATFORMER_PHASE_KEYS_PLAYER1 = {
+PLATFORMER_PHASE_KEYS_KEYBOARD_PLAYER = {
     "top": "JOY_0",
     #left et right sont déjà gérés par les sticks dans input_manager
     "left": pygame.K_q,
     "right": pygame.K_d,
     "down": pygame.K_s,  
-    "roll": "JOY_1",
+    "roll": pygame.K_LSHIFT,
     "pause": pygame.K_x,
     "quit": pygame.K_p,
     "shoot" : "MOUSE_LEFT",
-    "crouch": "JOY_9",
+    "crouch": pygame.K_c,
 }
 
-PLATFORMER_PHASE_KEYS_PLAYER2 = {
+PLATFORMER_PHASE_KEYS_CONTROLLER_PLAYER = {
     "top": "JOY_1",
     #left et right sont déjà gérés par les sticks dans input_manager
     "left": pygame.K_LEFT,
@@ -34,3 +34,4 @@ PLATFORMER_PHASE_KEYS_PLAYER2 = {
     "shoot" : "MOUSE_LEFT",
     "crouch": "JOY_9",
 }
+

@@ -5,7 +5,7 @@ from core.sound_manager import SoundManager
 from entities.platformer.button import Button
 from entities.platformer.debug import draw_text
 from core.configs.registry.commands import SYSTEM_COMMANDS, TD_MOVE_COMMANDS
-from core.configs.registry.inputmap import PLATFORMER_PHASE_KEYS_PLAYER1, PLATFORMER_PHASE_KEYS_PLAYER2
+from core.configs.registry.inputmap import PLATFORMER_PHASE_KEYS_KEYBOARD_PLAYER, PLATFORMER_PHASE_KEYS_CONTROLLER_PLAYER
 from core.engine import GameState
 from core.input_manager import InputManager
 from core.level_loader import LevelLoader
@@ -25,8 +25,13 @@ class PlatformerPhase(GameState):
         self.allsprites = CameraGroup()
         self.solids = pygame.sprite.Group()
         self.enemy_projectiles = pygame.sprite.Group()
-        self.input_manager_p1 = InputManager(PLATFORMER_PHASE_KEYS_PLAYER1, joystick_index=0)
-        self.input_manager_p2 = InputManager(PLATFORMER_PHASE_KEYS_PLAYER2, joystick_index=1)
+        #GOUGOUG JE VEUX LE MENU
+        if utiliser_controleur():
+            self.input_manager_p1 = InputManager(PLATFORMER_PHASE_KEYS_CONTROLLER_PLAYER, joystick_index=0)
+            self.input_manager_p2 = InputManager(PLATFORMER_PHASE_KEYS_CONTROLLER_PLAYER, joystick_index=1)
+        else:
+            self.input_manager_p1 = InputManager(PLATFORMER_PHASE_KEYS_KEYBOARD_PLAYER, joystick_index=0)
+            self.input_manager_p2 = InputManager(PLATFORMER_PHASE_KEYS_KEYBOARD_PLAYER, joystick_index=1)
         self.debug_mode = False
         self.debug_mode_text = False
         self.level_debug_surface = None

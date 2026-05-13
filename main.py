@@ -8,6 +8,8 @@ import core.configs.settings as stgs
 from core.sound_manager import SoundManager
 from core.state_manager import StateManager
 from states.phase.platformer import PlatformerPhase
+from states.menu.launch import LaunchPhase
+
 
 if platform.system() == "Windows":
     try:
@@ -48,7 +50,7 @@ class Game:
         # Initialisation du StateManager (Gestionnaire d'Etats, de scènes)
         # On lance la première scène du jeu directement (push).
         self.manager = StateManager()
-        self.manager.push(PlatformerPhase())
+        self.manager.push(LaunchPhase())
 
         # Variables de temps pour la boucle de jeu
         self.clock = pygame.time.Clock()  # Horloge limitant les FPS

@@ -57,6 +57,8 @@ class ParallaxManager:
         v_speed: float = 0.05,
         align_bottom: bool = False,
         auto_speed: float = 0,
+        offset_y=0,
+        scale: float = 1.0,
     ) -> None:
         """Charge, redimensionne et ajoute une nouvelle couche au parallaxe."""
         from core.asset_manager import AssetManager
@@ -68,9 +70,17 @@ class ParallaxManager:
             return
 
         screen_w, screen_h = pygame.display.get_surface().get_size()
+        
+        # Scale manuel
+        if scale != 1.0:
+            new_size = (
+                int(img.get_width() * scale),
+                int(img.get_height() * scale),
+            )
+            img = pygame.transform.smoothscale(img, new_size)
 
         # Redimensionnement intelligent pour couvrir la largeur de l'écran
-        if img.get_width() < screen_w:
+        elif img.get_width() < screen_w:
             ratio = screen_w / img.get_width()
             new_size = (screen_w, int(img.get_height() * ratio))
             img = pygame.transform.scale(img, new_size)

@@ -9,10 +9,8 @@ from core.sound_manager import SoundManager
 from core.state_manager import StateManager
 from states.phase.platformer import PlatformerPhase
 
-# --- DPI Awareness (Windows) ---
 if platform.system() == "Windows":
     try:
-        # On dit à Windows de NE PAS toucher à la mise à l'échelle
         ctypes.windll.shcore.SetProcessDpiAwareness(1)
     except Exception:
         ctypes.windll.user32.SetProcessDPIAware()

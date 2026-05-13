@@ -54,14 +54,14 @@ class PlatformerPhase(GameState):
 
     def _setup_entities(self):
         """Initialise le joueur, les ennemis et l'UI."""
-        # Joueur1
-        self.player1 = PlayerPlateformer(100, 964)
+        # Joueur 1 = policier/skin bleu.
+        self.player1 = PlayerPlateformer(100, 964, "player_blue")
         self.player1.phase = self
         self.player1.add_component("collision", CollisionComponent(self.player1))
         self.allsprites.add(self.player1)
 
-        # Joueur2
-        self.player2 = PlayerPlateformer(2400, 964)
+        # Joueur 2 = voleur/skin rouge.
+        self.player2 = PlayerPlateformer(2400, 964, "player_red")
         self.player2.phase = self
         self.player2.add_component("collision", CollisionComponent(self.player2))
         self.allsprites.add(self.player2)

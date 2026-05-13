@@ -55,8 +55,11 @@ class PlayerPlateformer(Player):
     Spécialisation pour le gameplay de plateforme.
     """
 
-    def __init__(self, x: int, y: int) -> None:
+    def __init__(self, x: int, y: int, skin_variant: str = "player") -> None:
         super().__init__(x, y)
+        #Chaque instance peut charger son propre dossier de skin.
+        #Permet de brancher chaque instance sur un dossier de skin différent.
+        self.skin_variant = skin_variant
 
         # --- Physique & Contrôles ---
         self.movable = self.add_component("movable", MovableComponent(self, 700))
@@ -118,41 +121,43 @@ class PlayerPlateformer(Player):
             frames = AssetManager.get_spritesheet(path, 128, 80)
             return [pygame.transform.scale(f, (tw, th)) for f in frames]
 
+        # Toutes les animations de ce joueur viennent du même sous-dossier.
+        # Tous les chemins d'animation partent du skin choisi pour cette instance.
+        skin_root = self.skin_variant
+
         self.anim_data = {
             "run": AssetManager.create_animation_data(
-                load_scaled("player/running/running"), 0.08
+                load_scaled(f"{skin_root}/running/running"), 0.08
             ),
             "idle": AssetManager.create_animation_data(
-                load_scaled("player/idle/idle"), 0.12
+                load_scaled(f"{skin_root}/idle/idle"), 0.12
             ),
             "jump": AssetManager.create_animation_data(
-                load_scaled("player/jump/up"), 0.1
+                load_scaled(f"{skin_root}/jump/up"), 0.1
             ),
             "fall": AssetManager.create_animation_data(
-                load_scaled("player/jump/down"), 0.1
+                load_scaled(f"{skin_root}/jump/down"), 0.1
             ),
             "shoot": AssetManager.create_animation_data(
-                load_scaled("player/idle/idle_shoot_gun"), 0.05
+                load_scaled(f"{skin_root}/idle/idle_shoot_gun"), 0.05
             ),
             "shoot_run": AssetManager.create_animation_data(
-                load_scaled("player/running/running_shoot_gun"), 0.05
+                load_scaled(f"{skin_root}/running/running_shoot_gun"), 0.05
             ),
             "crouch": AssetManager.create_animation_data(
-                load_scaled("player/crouch/crouch"), 0.05
+                load_scaled(f"{skin_root}/crouch/crouch"), 0.05
             ),
         }
 
-        roll_frames = load_scaled("player/roll/roll")
+        roll_frames = load_scaled(f"{skin_root}/roll/roll")
         if not roll_frames:
-            # Fallback : supporte aussi un simple roll.png (1 frame) non découpable en 128x80.
-            roll_img = AssetManager.get_image("player/roll/roll")
+            roll_img = AssetManager.get_image(f"{skin_root}/roll/roll")
             if roll_img is not None:
                 roll_frames = [pygame.transform.scale(roll_img, (tw, th))]
 
         if roll_frames:
             self.anim_data["roll"] = AssetManager.create_animation_data(roll_frames, 0.05)
         else:
-            # Fallback silencieux si la spritesheet de roulade n'est pas encore prête.
             self.anim_data["roll"] = self.anim_data["run"]
 
         self.animator = Animator(self, self.anim_data)

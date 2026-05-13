@@ -41,6 +41,7 @@ class InputManager:
 
         return False
 
+
     def get_joystick(self):
         """Retourne la manette configurée pour ce manager, sinon None."""
         if self.joystick_index < 0:
@@ -73,22 +74,26 @@ class InputManager:
             # 1. Gestion CLAVIER (KEYDOWN)
             if event.type == pygame.KEYDOWN:
                 for action_name, key in self.key_map.items():
-                    if self._binding_matches_event(key, event):
+                    if event.key == key:
                         active_actions.append(action_name)
 
             # 2. Gestion SOURIS (Appui unique)
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                for action_name, key in self.key_map.items():
-                    if self._binding_matches_event(key, event):
-                        active_actions.append(action_name)
+                if event.button == 1:  # 1 est le clic gauche
+                    for action_name, key in self.key_map.items():
+                        if key == self.MOUSE_LEFT:
+                            active_actions.append(action_name)
 
             # 3. Gestion MANETTE (JOYBUTTONDOWN)
             elif event.type == pygame.JOYBUTTONDOWN:
                 joystick = self.get_joystick()
                 if joystick is not None and event.joy == joystick.get_instance_id():
                     for action_name, key in self.key_map.items():
-                        if self._binding_matches_event(key, event):
-                            active_actions.append(action_name)
+                        #l'inputmap utilise une convention "JOY_X" pour les boutons de manette, ou X est l'index du bouton (plus simple)
+                        if isinstance(key, str) and key.startswith("JOY_"):
+                            button_index = int(key.split("_")[1])
+                            if event.button == button_index:
+                                active_actions.append(action_name)
 
         # Stick haut en appui unique (désactivé pour le moment)
         #joystick = self.get_joystick()
@@ -120,16 +125,6 @@ class InputManager:
         mouse_pressed = pygame.mouse.get_pressed()
 
         for action_name, key in self.key_map.items():
-            if isinstance(key, (list, tuple, set)):
-                if any(
-                    isinstance(binding, int) and binding != -1 and keys_pressed[binding]
-                    for binding in key
-                ):
-                    active_actions.append(action_name)
-                elif any(binding == self.MOUSE_LEFT for binding in key) and mouse_pressed[0]:
-                    active_actions.append(action_name)
-                continue
-
             # Si c'est une touche clavier standard
             if isinstance(key, int) and key != -1:
                 if keys_pressed[key]:

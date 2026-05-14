@@ -11,7 +11,7 @@ Projet dans le cadre des enseignements de l'ESIR par :
 - Rayan Barhada
 - Etienne Carlier
 - Keyvan Dahlem
-- Kerrian Chalulaux
+- Kerrian Chaluleau
 
 ---
 

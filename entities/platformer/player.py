@@ -62,10 +62,8 @@ class PlayerPlateformer(Player):
         self.skin_variant = skin_variant
 
         # --- Physique & Contrôles ---
-        if self.skin_variant == "player_red":
-            self.movable = self.add_component("movable", MovableComponent(self, 700))
-        else:
-            self.movable = self.add_component("movable", MovableComponent(self, 500))
+  
+        self.movable = self.add_component("movable", MovableComponent(self, 700))
         self.facing_right = True
         self.air_time = 0.0
         self.max_jumps = 2
@@ -226,7 +224,7 @@ class PlayerPlateformer(Player):
             self.phase.allsprites.add(bullet)
             self.shoot_cooldown = self.cooldown_max
             #Tir en courant: on déclenche l'état shoot_run, sinon shoot classique.
-            if abs(self.movable.velocity.x) > 100 and self.air_time <= 0.1:
+            if abs(self.movable.velocity.x) > 100 :
                 self.shoot_run_anim_timer = self.shoot_anim_duration
                 self.shoot_anim_timer = 0.0
             else:
@@ -253,7 +251,7 @@ class PlayerPlateformer(Player):
             SoundManager.play("hit", volume=0.4)
             if source_pos:
                 source_x = source_pos.x if hasattr(source_pos, "x") else source_pos[0]
-                force = 500
+                force = 700
                 self.movable.velocity.x = (
                     -force if source_x > self.rect.centerx else force
                 )
@@ -355,7 +353,7 @@ class PlayerPlateformer(Player):
         self._setup_animations()
 
     def jeu_gagne(self):
-        if self.tbag_nombre >= 50:
+        if self.tbag_nombre >= 1000:
             if hasattr(self, "phase") and self.phase is not None:
                 self.phase.victory_reached = True
             return True

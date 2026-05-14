@@ -30,3 +30,5 @@ class BaseEntity(Sprite):
         for component in self.components.values():
             if hasattr(component, "update"):
                 component.update(dt)
+
+                

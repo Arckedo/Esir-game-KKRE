@@ -32,6 +32,11 @@ class PlatformerPhase(GameState):
         self.debug_mode_text = False
         self.level_debug_surface = None
         self.victory_reached = False
+        self._player_label_font = None
+        
+        self.isplayerhit = False
+        self.last_hit_time = 0
+        self.playerhit_duration = 1000 
 
         # Bouton de debug: inactif au démarrage, actif après clic.
         self._debug_button_inactive_img = pygame.image.load(
@@ -194,22 +199,34 @@ class PlatformerPhase(GameState):
         for projectile in hits2:
             self.player2.take_damage(1, source_pos=projectile.rect.center)
 
+
+
+        if (
+            pygame.time.get_ticks() - self.last_hit_time
+            > self.playerhit_duration
+        ):
+            self.isplayerhit = False
+
+            
         #collisions entre joueurs c quand mm le coeur du jeu
         hits_between_players = pygame.sprite.collide_mask(self.player1, self.player2)
         if hits_between_players:
             # On peut choisir d'infliger des dégâts à l'un ou l'autre, ou les deux.
             self.player1.take_damage(1, source_pos=self.player2.rect.center)
             self.player2.take_damage(1, source_pos=self.player1.rect.center)
-            if self.player1.skin_variant == "player_red":
-                self.player1.change_skin("player_blue")  # Change le skin du joueur1 en rouge
-                self.player2.change_skin("player_red")  # Change le skin du joueur2 en
+            print("TOUCHERR")
+            if not self.isplayerhit:
+                if self.player1.skin_variant == "player_red":
+                    self.player1.change_skin("player_blue")  # Change le skin du joueur1 en rouge
+                    self.player2.change_skin("player_red")  # Change le skin du joueur2 en
+                else:
+                    self.player1.change_skin("player_red")  # Change le skin du joueur1 en rouge
+                    self.player2.change_skin("player_blue")  # Change le skin du joueur2 en
+                print("hITEEEDDD")
+                
                 SoundManager.play("shoot", volume=2)
-            else:
-                self.player1.change_skin("player_red")  # Change le skin du joueur1 en rouge
-                self.player2.change_skin("player_blue")  # Change le skin du joueur2 en
-                SoundManager.play("shoot", volume=2)
-
-
+                self.last_hit_time = pygame.time.get_ticks()
+                self.isplayerhit = True
 
     def draw(self, screen, current_fps):
         """Rendu de la phase."""
@@ -256,6 +273,9 @@ class PlatformerPhase(GameState):
         else:
             scaled_world = pygame.transform.smoothscale(world_view, (screen_w, screen_h))
             screen.blit(scaled_world, (0, 0))
+
+        self._draw_player_label(screen, self.player1, "1", render_offset, view_w, view_h)
+        self._draw_player_label(screen, self.player2, "2", render_offset, view_w, view_h)
 
         # 3) UI en overlay (non zoomée)
         self._draw_debug_ui(screen, current_fps)
@@ -311,6 +331,28 @@ class PlatformerPhase(GameState):
             draw_text(screen, f"Player Invulnerable: {self.player.invulnerable}", (100, 160))
             draw_text(screen, f"roll countdown: {self.player.roll_cooldown}", (100, 180))
             draw_text(screen, f"FPS:{current_fps}", (100, 200))
+
+    def _draw_player_label(self, screen, player, label, render_offset, view_w, view_h):
+        """Affiche un label centré au-dessus d'un joueur."""
+        if not pygame.font.get_init():
+            pygame.font.init()
+
+        if self._player_label_font is None:
+            self._player_label_font = pygame.font.SysFont("Roboto", 40)
+
+        scale_x = screen.get_width() / max(1, view_w)
+        scale_y = screen.get_height() / max(1, view_h)
+
+        label_surface = self._player_label_font.render(label, True, (255, 255, 255))
+        shadow_surface = self._player_label_font.render(label, True, (0, 0, 0))
+
+        world_x = (player.rect.centerx - render_offset.x) * scale_x
+        world_y = (player.rect.top - render_offset.y - 26) * scale_y
+        label_rect = label_surface.get_rect(center=(int(world_x), int(world_y)))
+        shadow_rect = shadow_surface.get_rect(center=(label_rect.centerx + 1, label_rect.centery + 1))
+
+        screen.blit(shadow_surface, shadow_rect)
+        screen.blit(label_surface, label_rect)
 
     def affiche_victoire(self, screen):
         """Affiche un message de victoire à l'écran."""

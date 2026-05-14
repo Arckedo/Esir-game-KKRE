@@ -27,6 +27,9 @@ class MovableComponent:
 
         # 2. CALCUL X (Accélération progressive)
         target_vel_x = self.input_dir.x * self.max_speed
+        if hasattr(self.owner,"skin_variant"):
+            if self.owner.skin_variant == "player_red":
+                target_vel_x = target_vel_x * 0.8
         if self.input_dir.x != 0:
             self.velocity.x += (
                 target_vel_x - self.velocity.x

@@ -9,6 +9,8 @@ class SoundManager:
     _sounds: dict[str, pygame.mixer.Sound] = {}
     _enabled: bool = True
     _extensions: tuple[str, ...] = (".wav", ".mp3", ".ogg")
+    _music_volume: float = 0.5
+    _sound_volume: float = 0.5
 
     @classmethod
     def setup(cls, frequency: int = 44100, size: int = -16, channels: int = 2, buffer: int = 512) -> None:
@@ -59,8 +61,8 @@ class SoundManager:
         sound = cls.get_sound(name)
         if sound is None:
             return
-
-        sound.set_volume(max(0.0, min(1.0, volume)))
+        final_volume = volume * cls._sound_volume
+        sound.set_volume(max(0.0, min(1.0, final_volume)))
         sound.play()
 
     # ajout de méthodes pour la musique de fond, qui utilise une API différente de pygame.mixer.music
@@ -101,7 +103,8 @@ class SoundManager:
             return
 
         if cls.load_music(name):
-            pygame.mixer.music.set_volume(max(0.0, min(1.0, volume)))
+            final_volume = volume * cls._music_volume
+            pygame.mixer.music.set_volume(max(0.0, min(1.0, final_volume)))
             pygame.mixer.music.play(-1 if loop else 0)
             print(f"Playing music '{name}' with loop={loop}")
         else:
@@ -113,3 +116,27 @@ class SoundManager:
         """Arrête la musique en cours."""
         if cls._enabled:
             pygame.mixer.music.stop()
+
+    # méthode pour arrêter la musique en cours
+    @classmethod
+    def stop_music(cls) -> None:
+        """Arrête la musique en cours."""
+        if cls._enabled:
+            pygame.mixer.music.stop()
+
+    @classmethod
+    def set_music_volume(cls, value):
+        cls._music_volume = max(0.0, min(1.0, value))
+        pygame.mixer.music.set_volume(cls._music_volume)
+
+    @classmethod
+    def set_sound_volume(cls, value):
+        cls._sound_volume = max(0.0, min(1.0, value))
+
+    @classmethod
+    def get_music_volume(cls):
+        return cls._music_volume
+
+    @classmethod
+    def get_sound_volume(cls):
+        return cls._sound_volume

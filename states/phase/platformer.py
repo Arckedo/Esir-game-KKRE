@@ -16,6 +16,7 @@ from entities.cursor import Cursor
 from entities.platformer.ennemy import CasterEnemy
 from entities.platformer.player import PlayerPlateformer
 from UI.ui_element import UIHealthBar
+from states.menu.parametres import SettingsPhase
 
 class PlatformerPhase(GameState):
     """Gère la logique et le rendu du mode plateforme."""
@@ -146,6 +147,11 @@ class PlatformerPhase(GameState):
         # Commandes système (pause, quit) - pas de différenciation par joueur
         self.input_manager_p1.call_commands(command_calls_p1, SYSTEM_COMMANDS, game)
         self.input_manager_p2.call_commands(command_calls_p2, SYSTEM_COMMANDS, game)
+        for event in events:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    game.manager.push(SettingsPhase())
+
 
     def update(self, game):
         """Met à jour la logique du jeu."""

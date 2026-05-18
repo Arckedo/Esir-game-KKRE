@@ -2,6 +2,7 @@ from core.engine import Command
 
 class MoveTopCommand(Command):
     def execute(self, receiver):
+        print("EXECUTE MOVE TOP CLASSIQUE")
         receiver.movetop()
 
 class MoveDownCommand(Command):

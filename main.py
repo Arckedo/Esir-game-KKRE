@@ -119,9 +119,7 @@ class Game:
             current_state.draw(self.screen, self.current_fps)
 
             # Envoie l'image à pygame pour l'afficher
-            pygame.display.flip()
-
-            
+            pygame.display.flip()  
 
         # Ferme proprement Pygame
         pygame.quit()

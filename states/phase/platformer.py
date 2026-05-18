@@ -5,14 +5,13 @@ from core.sound_manager import SoundManager
 from entities.platformer.button import Button
 from entities.platformer.debug import draw_text
 from core.configs.registry.commands import SYSTEM_COMMANDS, TD_MOVE_COMMANDS
-from core.configs.registry.inputmap import PLATFORMER_PHASE_KEYS_KEYBOARD_PLAYER, PLATFORMER_PHASE_KEYS_CONTROLLER_PLAYER
+from core.configs.registry.inputmap import PLATFORMER_PHASE_KEYS_CONTROLLER_PLAYER_2, PLATFORMER_PHASE_KEYS_KEYBOARD_PLAYER, PLATFORMER_PHASE_KEYS_CONTROLLER_PLAYER
 from core.engine import GameState
 from core.input_manager import InputManager
 from core.level_loader import LevelLoader
 from core.parralax import ParallaxManager
 from entities.Camera import CameraGroup
 from entities.components.collision import CollisionComponent
-from entities.cursor import Cursor
 from entities.platformer.ennemy import CasterEnemy
 from entities.platformer.player import PlayerPlateformer
 from UI.ui_element import UIHealthBar
@@ -26,7 +25,7 @@ class PlatformerPhase(GameState):
         self.solids = pygame.sprite.Group()
         self.enemy_projectiles = pygame.sprite.Group()
         self.input_manager_p1 = InputManager(PLATFORMER_PHASE_KEYS_CONTROLLER_PLAYER, joystick_index=0)
-        self.input_manager_p2 = InputManager(PLATFORMER_PHASE_KEYS_CONTROLLER_PLAYER, joystick_index=1)
+        self.input_manager_p2 = InputManager(PLATFORMER_PHASE_KEYS_CONTROLLER_PLAYER_2, joystick_index=1)
 
         self.debug_mode = False
         self.debug_mode_text = False
@@ -51,7 +50,6 @@ class PlatformerPhase(GameState):
         self._setup_entities()
         self._setup_world()
         self._setup_background()
-        self.cursor = Cursor("crosshair")
 
     # debut de la phase
     def enter(self):
@@ -130,12 +128,18 @@ class PlatformerPhase(GameState):
         # Récupère les commandes des deux joueurs
         command_calls_p1 = self.input_manager_p1.get_commands(events)
         command_calls_p2 = self.input_manager_p2.get_commands(events)
-
-        # Sauts (appui unique pour éviter le multi-déclenchement)
+        
         if "top" in command_calls_p1:
+            print("TD_MOVEMANETTE(TOP1)")
             TD_MOVE_COMMANDS["top"].execute(self.player1)
         if "top" in command_calls_p2:
             TD_MOVE_COMMANDS["top"].execute(self.player2)
+        
+        if "top_manette" in command_calls_p1:
+            print("TD_MOVEMANETTE(TOP1)")
+            TD_MOVE_COMMANDS["top_manette"].execute(self.player1)
+        if "top_manette" in command_calls_p2:
+            TD_MOVE_COMMANDS["top_manette"].execute(self.player2)
 
         # Roulades
         if "roll" in command_calls_p1:
@@ -170,7 +174,6 @@ class PlatformerPhase(GameState):
         self.input_manager_p2.call_commands(move_calls_p2, TD_MOVE_COMMANDS, self.player2)
 
         # 2. Mise à jour des entités et curseur
-        self.cursor.update()
         self.allsprites.update(game.dt)
         self._handle_collisions()
 
@@ -285,7 +288,6 @@ class PlatformerPhase(GameState):
         if self.victory_reached:
             self.affiche_victoire(screen)
 
-        self.cursor.draw(screen)
 
         #Affichage tbag
         draw_text(screen, "gougougaga", (100, 200))

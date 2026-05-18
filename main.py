@@ -9,6 +9,7 @@ from core.sound_manager import SoundManager
 from core.state_manager import StateManager
 from states.phase.platformer import PlatformerPhase
 from states.menu.launch import LaunchPhase
+from states.menu.parametres import SettingsPhase
 
 
 if platform.system() == "Windows":

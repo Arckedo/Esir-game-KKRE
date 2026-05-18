@@ -86,6 +86,7 @@ class InputManager:
 
             # 3. Gestion MANETTE (JOYBUTTONDOWN)
             elif event.type == pygame.JOYBUTTONDOWN:
+                print("JOYBUTTONDOWN", event.button)
                 joystick = self.get_joystick()
                 if joystick is not None and event.joy == joystick.get_instance_id():
                     for action_name, key in self.key_map.items():
@@ -151,12 +152,29 @@ class InputManager:
             elif axis_y > self.AXIS_DEADZONE and "down" in self.key_map and "down" not in active_actions:
                 active_actions.append("down")
 
-            # Gestion des boutons manette (appuis continus)
+            # Gestion des boutons manette (appui unique / edge detection)
+            # get_button() renvoie True tant que le bouton est maintenu.
+            # On déclenche donc uniquement sur le front montant (release -> press).
+            if not hasattr(self, "_joystick_button_was_down"):
+                self._joystick_button_was_down = {}
+
             for action_name, key in self.key_map.items():
                 if isinstance(key, str) and key.startswith("JOY_"):
                     button_index = int(key.split("_")[1])
-                    if joystick.get_button(button_index) and action_name not in active_actions:
-                        active_actions.append(action_name)
+
+                    is_down = joystick.get_button(button_index)
+                    was_down = self._joystick_button_was_down.get((self.joystick_index, button_index), False)
+
+                    # Front montant
+                    if is_down and not was_down and action_name not in active_actions:
+                        # Évite que les boutons manette déclenchent en continu des actions
+                        # qui sont déjà traitées à part (ex: top_manette via get_commands). 
+                        if action_name != "top_manette":
+                            active_actions.append(action_name)
+
+
+                    self._joystick_button_was_down[(self.joystick_index, button_index)] = is_down
+
 
         return active_actions
 

@@ -2,6 +2,7 @@ from commands.move_commands import *
 from commands.system_commands import *
 
 TD_MOVE_COMMANDS = {
+    "top_manette": MoveTopCommand(),
     "top": MoveTopCommand(),
     "left": MoveLeftCommand(),
     "right": MoveRightCommand(),

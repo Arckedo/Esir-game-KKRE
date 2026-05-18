@@ -176,6 +176,7 @@ class PlayerPlateformer(Player):
             self.movable.velocity.y = -self.jump_force
             self.movable.on_ground = False
             self.jumps_left -= 1
+            print("MOVETOP")
             SoundManager.play("jump", volume=0.35)
 
     def movedown(self) -> None:

@@ -3,6 +3,7 @@ import pygame
 from core.engine import GameState
 from core.parralax import ParallaxManager
 from entities.platformer.button import Button
+from core.sound_manager import SoundManager
 
 
 class SettingsPhase(GameState):
@@ -42,6 +43,14 @@ class SettingsPhase(GameState):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     game.manager.pop()
+                if event.key == pygame.K_q:
+                    SoundManager.set_music_volume(SoundManager.get_music_volume() - 0.1)
+                if event.key == pygame.K_d:
+                    SoundManager.set_music_volume(SoundManager.get_music_volume() + 0.1)
+                if event.key == pygame.K_a:
+                    SoundManager.set_sound_volume(SoundManager.get_sound_volume() - 0.1)
+                if event.key == pygame.K_e:
+                    SoundManager.set_sound_volume(SoundManager.get_sound_volume() + 0.1)
 
 
     def update(self, game):
@@ -55,6 +64,12 @@ class SettingsPhase(GameState):
         self.background.draw(screen, pygame.Vector2(0, 0))
 
         self.back_button.draw(screen)
+        music = int(SoundManager.get_music_volume() * 100)
+        effects = int(SoundManager.get_sound_volume() * 100)
+        txt1 = self.font_text.render(f"Musique : {music}%",True,(255,255,255))
+        txt2 = self.font_text.render(f"Effets : {effects}%",True,(255,255,255))
+        screen.blit(txt1, (300,220))
+        screen.blit(txt2, (300,300))
 
     def _setup_background(self):
         self.background = ParallaxManager()

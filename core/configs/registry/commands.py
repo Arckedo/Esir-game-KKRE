@@ -8,6 +8,7 @@ TD_MOVE_COMMANDS = {
     "right": MoveRightCommand(),
     "down": MoveDownCommand(),
     "roll": RollCommand(),
+    "roll_manette": RollCommand(),
     "shoot": ShootCommand(),
     "crouch": CrouchCommand(),
 }

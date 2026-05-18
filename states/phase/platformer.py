@@ -147,6 +147,13 @@ class PlatformerPhase(GameState):
         if "roll" in command_calls_p2:
             TD_MOVE_COMMANDS["roll"].execute(self.player2)
 
+
+        if "roll_manette" in command_calls_p1:
+            TD_MOVE_COMMANDS["roll_manette"].execute(self.player1)
+        if "roll_manette" in command_calls_p2:
+            TD_MOVE_COMMANDS["roll_manette"].execute(self.player2)
+
+
         # Commandes système (pause, quit) - pas de différenciation par joueur
         self.input_manager_p1.call_commands(command_calls_p1, SYSTEM_COMMANDS, game)
         self.input_manager_p2.call_commands(command_calls_p2, SYSTEM_COMMANDS, game)

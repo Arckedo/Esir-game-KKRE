@@ -53,7 +53,7 @@ class MovableComponent:
         if collider and collider.check_solids(test_rect):
             # Logique de 'Step Up' : on tente de "monter" sur l'obstacle
             step_passed = False
-            max_step_height = 8  # Hauteur max franchissable sans sauter
+            max_step_height = 30  # Hauteur max franchissable sans sauter
 
             for s in range(1, max_step_height + 1):
                 step_test_rect = test_rect.copy()

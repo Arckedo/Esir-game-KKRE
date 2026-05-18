@@ -47,82 +47,56 @@ class CameraGroup(pygame.sprite.Group):
         self.zoom += (1.0 - self.zoom) * zoom_lerp
 
 
-    def update_camera_multi(
-        self,
-        targets: list[pygame.sprite.Sprite],
-        dt: float,
-        margin_x: int = 300,
-        margin_y: int = 180,
-        viewport_size: tuple[int, int] | None = None,
-    ) -> None:
+    def update_camera_multi(self, targets: list[pygame.sprite.Sprite], dt: float) -> None:
         """
-        Ajuste la caméra pour garder plusieurs cibles visibles avec des marges,
-        puis applique le même lissage que la caméra standard.
+        Ajuste la caméra pour garder exactement deux joueurs visibles avec des marges,
+        puis applique un lissage (Lerp) sur la position et le zoom.
         """
-        valid_targets = [t for t in targets if t is not None and hasattr(t, "rect")]
-        if not valid_targets:
-            return
+        # On extrait directement les positions des deux joueurs
+        p1_rect, p2_rect = targets[0].rect, targets[1].rect
 
-        if len(valid_targets) == 1:
-            self.update_camera(valid_targets[0], dt)
-            return
+        # Encadrement entre les deux joueurs
+        min_x = min(p1_rect.left, p2_rect.left)
+        max_x = max(p1_rect.right, p2_rect.right)
+        min_y = min(p1_rect.top, p2_rect.top)
+        max_y = max(p1_rect.bottom, p2_rect.bottom)
 
-        min_x = min(t.rect.left for t in valid_targets)
-        max_x = max(t.rect.right for t in valid_targets)
-        min_y = min(t.rect.top for t in valid_targets)
-        max_y = max(t.rect.bottom for t in valid_targets)
+        # Zoom dynamique selon la distance maximale entre les deux joueurs
+        taille_box = max(max_x - min_x, max_y - min_y)
 
-
-        # Zoom dynamique selon l'écart entre les cibles.
-        box_width = max_x - min_x
-        box_height = max_y - min_y
-        box_size = max(box_width, box_height)
-
-        # Interpolation 0 -> 1 selon la taille encadrant les joueurs.
+        # Interpolation du zoom (0.0 = proche, 1.0 = éloigné)
         size_span = max(1, self.zoom_size_max - self.zoom_size_min)
-        t = (box_size - self.zoom_size_min) / size_span
-        t = max(0.0, min(1.0, t))
-        zoom_ideal = self.zoom_max - t * (self.zoom_max - self.zoom_min)
+        t = max(0.0, min(1.0, (taille_box - self.zoom_size_min) / size_span))
+        zoom_ideal = self.zoom_max - t*(self.zoom_max - self.zoom_min) #formule mathématique compliquée de fou furieux, en gros plus la box est grande, plus le zoom est petit, et inversement.
 
+        #Dimensions de l'écran et marges fixes (ça change pas)
+        screen_w, screen_h = stgs.SCREEN_WIDTH, stgs.SCREEN_HEIGHT
+        margin_x, margin_y = 300, 180
 
-        if viewport_size is None:
-            screen_w = stgs.SCREEN_WIDTH
-            screen_h = stgs.SCREEN_HEIGHT
-        else:
-            screen_w, screen_h = viewport_size
-        usable_w = max(1, screen_w - 2 * margin_x)
-        usable_h = max(1, screen_h - 2 * margin_y)
+        #Centre entre les deux joueurs
+        centre_x = (min_x + max_x)*0.5
+        centre_y = (min_y + max_y)*0.5
+        ideal_offset = pygame.Vector2(centre_x - screen_w * 0.5, centre_y - screen_h * 0.5)
 
-        center_x = (min_x + max_x) * 0.5
-        center_y = (min_y + max_y) * 0.5
-        ideal_offset = pygame.Vector2(
-            center_x - screen_w * 0.5,
-            center_y - screen_h * 0.5,
-        )
+        # Ajustement de l'offset pour respecter les marges de sécurité si l'espace le permet
+        if (max_x - min_x) <= (screen_w - 2 * margin_x):
+            ideal_offset.x = max(max_x - (screen_w - margin_x), min(ideal_offset.x, min_x - margin_x))
+            
+        if (max_y - min_y) <= (screen_h - 2 * margin_y):
+            ideal_offset.y = max(max_y - (screen_h - margin_y), min(ideal_offset.y, min_y - margin_y))
 
-        # Plage d'offset qui garde les cibles dans les marges, si possible.
-        offset_x_min = max_x - (screen_w - margin_x)
-        offset_x_max = min_x - margin_x
-        offset_y_min = max_y - (screen_h - margin_y)
-        offset_y_max = min_y - margin_y
-
-        if (max_x - min_x) <= usable_w:
-            ideal_offset.x = max(offset_x_min, min(ideal_offset.x, offset_x_max))
-        if (max_y - min_y) <= usable_h:
-            ideal_offset.y = max(offset_y_min, min(ideal_offset.y, offset_y_max))
-
+        #Applique le lissage au lieu de déplacer direct
         lerp_factor = self.smoothing * (dt * 60)
         if lerp_factor >= 1.0:
             self.offset = ideal_offset
-            return
-
-        diff = ideal_offset - self.offset
-        if diff.length() > self.min_move_threshold:
-            self.offset += diff * lerp_factor
         else:
-            self.offset = ideal_offset
+            diff = ideal_offset - self.offset
+            if diff.length() > self.min_move_threshold:
+                self.offset += diff * lerp_factor
+            else:
+                self.offset = ideal_offset
 
-        # Lissage dédié du zoom (plus stable visuellement).
+        #Lissage du zoom
         zoom_lerp = min(1.0, self.zoom_smoothing * (dt * 60))
         self.zoom += (zoom_ideal - self.zoom) * zoom_lerp
 

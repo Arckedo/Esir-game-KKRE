@@ -175,12 +175,7 @@ class PlatformerPhase(GameState):
         self._handle_collisions()
 
         # 3. Caméra multi-cibles: garde player1 et player2 visibles.
-        self.allsprites.update_camera_multi(
-            [self.player1, self.player2],
-            game.dt,
-            margin_x=280,
-            margin_y=180,
-        )
+        self.allsprites.update_camera_multi([self.player1, self.player2],game.dt,)
         self.background.update()
 
     def _handle_collisions(self):
@@ -274,8 +269,8 @@ class PlatformerPhase(GameState):
             scaled_world = pygame.transform.smoothscale(world_view, (screen_w, screen_h))
             screen.blit(scaled_world, (0, 0))
 
-        self._draw_player_label(screen, self.player1, "1", render_offset, view_w, view_h)
-        self._draw_player_label(screen, self.player2, "2", render_offset, view_w, view_h)
+        self.affichage_nom_player(screen, self.player1, "1", render_offset, view_w, view_h)
+        self.affichage_nom_player(screen, self.player2, "2", render_offset, view_w, view_h)
 
         # 3) UI en overlay (non zoomée)
         self._draw_debug_ui(screen, current_fps)
@@ -332,7 +327,7 @@ class PlatformerPhase(GameState):
             draw_text(screen, f"roll countdown: {self.player.roll_cooldown}", (100, 180))
             draw_text(screen, f"FPS:{current_fps}", (100, 200))
 
-    def _draw_player_label(self, screen, player, label, render_offset, view_w, view_h):
+    def affichage_nom_player(self, screen, player, label, render_offset, view_w, view_h):
         """Affiche un label centré au-dessus d'un joueur."""
         if not pygame.font.get_init():
             pygame.font.init()

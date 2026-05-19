@@ -12,5 +12,5 @@ class PausePhase(GameState):
     def update(self, game):
         pass
 
-    def draw(self, screen):
+    def draw(self, screen, current_fps):
         screen.fill((90, 40, 90))

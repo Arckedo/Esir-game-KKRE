@@ -57,12 +57,12 @@ class PlayerPlateformer(Player):
 
     def __init__(self, x: int, y: int, skin_variant: str = "player") -> None:
         super().__init__(x, y)
-        #Chaque instance peut charger son propre dossier de skin.
-        #Permet de brancher chaque instance sur un dossier de skin différent.
+        # Chaque instance peut charger son propre dossier de skin.
+        # Permet de brancher chaque instance sur un dossier de skin différent.
         self.skin_variant = skin_variant
 
         # --- Physique & Contrôles ---
-  
+
         self.movable = self.add_component("movable", MovableComponent(self, 700))
         self.facing_right = True
         self.air_time = 0.0
@@ -86,7 +86,11 @@ class PlayerPlateformer(Player):
         self.shoot_anim_timer = 0.0
         self.shoot_run_anim_timer = 0.0
         self.is_crouching = False
-        self.tbag_nombre = 0 
+
+        # --- Chrono / rôle ---
+        self.max_chrono = 60
+        self.chrono = self.max_chrono
+        self.tbag_nombre = 0
 
         # --- Initialisation Visuelle ---
         self._setup_animations()
@@ -98,10 +102,10 @@ class PlayerPlateformer(Player):
         # Le point (x, y) est au bas-milieu du joueur, pas au haut-gauche
         self.rect = pygame.Rect(0, 0, 40, 60)
         self.rect.midbottom = (x, y)
-        
+
         # Hitbox standard et réduite pour le crouch
         self.normal_hitbox = MaskFactory.capsule_mask(40, 60)
-        self.crouch_hitbox = MaskFactory.capsule_mask(40, 40)  # Hitbox réduite en hauteur
+        self.crouch_hitbox = MaskFactory.capsule_mask(40, 40)
         my_hitbox = self.normal_hitbox
 
         self.sprite_comp = self.add_component(
@@ -158,7 +162,9 @@ class PlayerPlateformer(Player):
                 roll_frames = [pygame.transform.scale(roll_img, (tw, th))]
 
         if roll_frames:
-            self.anim_data["roll"] = AssetManager.create_animation_data(roll_frames, 0.05)
+            self.anim_data["roll"] = AssetManager.create_animation_data(
+                roll_frames, 0.05
+            )
         else:
             self.anim_data["roll"] = self.anim_data["run"]
 
@@ -166,9 +172,15 @@ class PlayerPlateformer(Player):
 
     # --- Gestion des Commandes ---
     def moveleft(self) -> None:
+        # Empêche de courir pendant un tbag toggle actif
+        if getattr(self, "_tbag_toggle_active", False):
+            return
         self.movable.input_dir.x = -1
 
     def moveright(self) -> None:
+        # Empêche de courir pendant un tbag toggle actif
+        if getattr(self, "_tbag_toggle_active", False):
+            return
         self.movable.input_dir.x = 1
 
     def movetop(self) -> None:
@@ -184,6 +196,9 @@ class PlayerPlateformer(Player):
 
     def roll(self) -> None:
         """Demande une roulade. La demande est bufferisée quelques ms."""
+        # Ne pas autoriser la roulade pendant un tbag toggle
+        if getattr(self, "_tbag_toggle_active", False):
+            return
         if self.roll_timer > 0:
             return
 
@@ -224,23 +239,54 @@ class PlayerPlateformer(Player):
             bullet = Bullet(self.rect.centerx, self.rect.centery, world_mouse)
             self.phase.allsprites.add(bullet)
             self.shoot_cooldown = self.cooldown_max
-            #Tir en courant: on déclenche l'état shoot_run, sinon shoot classique.
-            if abs(self.movable.velocity.x) > 100 :
+            # Tir en courant: on déclenche l'état shoot_run, sinon shoot classique.
+            if abs(self.movable.velocity.x) > 100:
                 self.shoot_run_anim_timer = self.shoot_anim_duration
                 self.shoot_anim_timer = 0.0
             else:
                 self.shoot_anim_timer = self.shoot_anim_duration
                 self.shoot_run_anim_timer = 0.0
-            
 
             SoundManager.play("shoot", volume=2)
 
     def crouch(self) -> None:
         """Active l'état de crouch tant que la touche est maintenue."""
-        if self.skin_variant == "player_red" and self.movable.on_ground:
-            self.is_crouching = True
+        print(
+            f"TBAG/CROUCH déclenché - Skin: {self.skin_variant}, OnGround: {self.movable.on_ground}"
+        )
+
+        is_thief = (
+            hasattr(self, "phase")
+            and hasattr(self.phase, "player1")
+            and hasattr(self.phase, "player2")
+            and (
+                (
+                    self == self.phase.player1
+                    and self.phase.player1.skin_variant == "player_red"
+                )
+                or (
+                    self == self.phase.player2
+                    and self.phase.player2.skin_variant == "player_red"
+                )
+            )
+        )
+
+        print(f"  -> Is Thief: {is_thief}, Skin Variant: {self.skin_variant}")
+
+        if is_thief:
             self.tbag_nombre += 1
 
+            self._tbag_pulse_sequence = [
+                (0.08, True),
+                (0.05, False),
+                (0.08, True),
+                (0.05, False),
+                (0.08, True),
+            ]
+            self._tbag_sequence_index = 0
+            self._tbag_sequence_timer = self._tbag_pulse_sequence[0][0]
+            self.is_crouching = self._tbag_pulse_sequence[0][1]
+            print(f"TBAG séquence lancée #{self.tbag_nombre}")
 
     def uncrouch(self) -> None:
         """Désactive le crouch quand on relâche la touche."""
@@ -260,6 +306,63 @@ class PlayerPlateformer(Player):
             return True
         return False
 
+    def update_crouch_state(self, is_holding: bool) -> None:
+        """Gère l'état accroupi de manière continue et modifie la hitbox."""
+        is_thief = (
+            hasattr(self, "phase")
+            and hasattr(self.phase, "player1")
+            and hasattr(self.phase, "player2")
+            and (
+                (
+                    self == self.phase.player1
+                    and self.phase.player1.skin_variant == "player_red"
+                )
+                or (
+                    self == self.phase.player2
+                    and self.phase.player2.skin_variant == "player_red"
+                )
+            )
+        )
+
+        if is_holding and not getattr(self, "_tbag_toggle_active", False) and is_thief:
+            self._tbag_toggle_active = True
+            self._tbag_toggle_interval = 0.06
+            self._tbag_toggle_timer = self._tbag_toggle_interval
+            self._tbag_toggle_state = True
+            self.is_crouching = True
+            self.tbag_nombre += 1
+            print(f"TBAG toggle start, compteur: {self.tbag_nombre}")
+
+        if not is_holding and getattr(self, "_tbag_toggle_active", False):
+            self._tbag_toggle_active = False
+            if hasattr(self, "_tbag_toggle_timer"):
+                del self._tbag_toggle_timer
+            if hasattr(self, "_tbag_toggle_interval"):
+                del self._tbag_toggle_interval
+            if hasattr(self, "_tbag_toggle_state"):
+                del self._tbag_toggle_state
+            self.is_crouching = False
+
+        if (
+            is_holding
+            and not is_thief
+            and not getattr(self, "_tbag_toggle_active", False)
+        ):
+            self.is_crouching = True
+        elif not is_holding and not getattr(self, "_tbag_toggle_active", False):
+            self.is_crouching = False
+
+        if self.is_crouching:
+            if hasattr(self, "sprite_comp"):
+                self.sprite_comp.custom_mask = self.crouch_hitbox
+            if self.rect.height == 60:
+                self.rect.height = 40
+        else:
+            if hasattr(self, "sprite_comp"):
+                self.sprite_comp.custom_mask = self.normal_hitbox
+            if self.rect.height == 40:
+                self.rect.height = 60
+
     def update(self, dt: float) -> None:
         self.jeu_gagne()
 
@@ -268,6 +371,13 @@ class PlayerPlateformer(Player):
 
         if self.roll_buffer_timer > 0:
             self.roll_buffer_timer -= dt
+
+        if getattr(self, "_tbag_toggle_active", False):
+            try:
+                self.movable.input_dir.x = 0
+                self.movable.velocity.x = 0
+            except Exception:
+                pass
 
         if self.movable.on_ground:
             self.ground_grace_timer = self.ground_grace_time
@@ -294,10 +404,50 @@ class PlayerPlateformer(Player):
 
         if self.shoot_run_anim_timer > 0:
             self.shoot_run_anim_timer -= dt
-        
+
+        if getattr(self, "_tbag_toggle_active", False):
+            self._tbag_toggle_timer -= dt
+            if self._tbag_toggle_timer <= 0:
+                self._tbag_toggle_state = not getattr(self, "_tbag_toggle_state", False)
+                self.is_crouching = self._tbag_toggle_state
+                if self.is_crouching:
+                    if hasattr(self, "sprite_comp"):
+                        self.sprite_comp.custom_mask = self.crouch_hitbox
+                    if self.rect.height == 60:
+                        self.rect.height = 40
+                else:
+                    if hasattr(self, "sprite_comp"):
+                        self.sprite_comp.custom_mask = self.normal_hitbox
+                    if self.rect.height == 40:
+                        self.rect.height = 60
+                self._tbag_toggle_timer += getattr(self, "_tbag_toggle_interval", 0.06)
+
+        if hasattr(self, "_tbag_sequence_timer"):
+            self._tbag_sequence_timer -= dt
+
+            if self._tbag_sequence_timer <= 0:
+                self._tbag_sequence_index += 1
+
+                if self._tbag_sequence_index < len(self._tbag_pulse_sequence):
+                    duration, is_crouch = self._tbag_pulse_sequence[
+                        self._tbag_sequence_index
+                    ]
+                    self._tbag_sequence_timer = duration
+                    self.is_crouching = is_crouch
+                else:
+                    del self._tbag_sequence_timer
+                    del self._tbag_sequence_index
+                    del self._tbag_pulse_sequence
+                    self.is_crouching = False
+        elif hasattr(self, "_crouch_pulse_timer"):
+            if self._crouch_pulse_timer > 0:
+                self._crouch_pulse_timer -= dt
+                self.is_crouching = True
+            else:
+                self.is_crouching = False
+
         super().update(dt)
 
-        # 1. Mise à jour de l'état d'animation
         on_ground = getattr(self.movable, "on_ground", True)
         if on_ground:
             self.jumps_left = self.max_jumps
@@ -316,30 +466,24 @@ class PlayerPlateformer(Player):
             self.animator.set_state("run")
         elif self.is_crouching:
             self.animator.set_state("crouch")
-            # Applique la hitbox réduite pendant le crouch
             self.sprite_comp.mask = self.crouch_hitbox
         else:
             self.animator.set_state("idle")
-            # Restore normal hitbox quand pas de crouch
             self.sprite_comp.mask = self.normal_hitbox
 
         self.animator.update(dt)
 
-        # 2. Gestion des effets visuels (Vibration et Clignotement)
         if self.flash_timer > 0:
             self.shiver_offset.x = (pygame.time.get_ticks() % 10) - 5
             self.sprite_comp.visible = True
         else:
             self.shiver_offset.x = 0
-            # Effet de clignotement pendant l'invulnérabilité
             self.sprite_comp.visible = (
                 not self.invulnerable or (pygame.time.get_ticks() // 80) % 2 == 0
             )
 
-        # 3. Application du flip et des offsets
         self.sprite_comp.offset.x = self.base_visual_offset.x + self.shiver_offset.x
 
-        # Orientation : priorité à la visée à l'arrêt, au mouvement en course
         if abs(self.movable.velocity.x) < 50:
             cam_x = self.phase.allsprites.offset.x
             self.facing_right = (pygame.mouse.get_pos()[0] + cam_x) > self.rect.centerx
@@ -354,8 +498,6 @@ class PlayerPlateformer(Player):
         self._setup_animations()
 
     def jeu_gagne(self):
-        if self.tbag_nombre >= 1000:
-            if hasattr(self, "phase") and self.phase is not None:
-                self.phase.victory_reached = True
-            return True
+        """Ancienne condition basée sur tbag_nombre.
+        Sert pas dans le nouveau système"""
         return False

@@ -19,10 +19,15 @@ class InputManager:
         self.key_map = key_map
         self.joystick_index = joystick_index
         self.MOUSE_LEFT = "MOUSE_LEFT"
-        #1/4 de l'inclinaison du stick pour éviter les activations accidentelles
+        self.MOUSE_RIGHT = "MOUSE_RIGHT"
+        self.MOUSE_MIDDLE = "MOUSE_MIDDLE"
+
+        # 1/4 de l'inclinaison du stick pour éviter les activations accidentelles
         self.AXIS_DEADZONE = 0.25
         self._axis_up_was_active = False
-        self.debug_button = Button(100, 200, pygame.image.load("assets/images/debug.png").convert_alpha(), 0.1)
+        self.debug_button = Button(
+            100, 200, pygame.image.load("assets/images/debug.png").convert_alpha(), 0.1
+        )
 
     def _binding_matches_event(self, binding, event) -> bool:
         """Teste si un binding clavier/souris/manette correspond à un événement."""
@@ -32,26 +37,34 @@ class InputManager:
         if event.type == pygame.KEYDOWN and isinstance(binding, int):
             return event.key == binding
 
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            return binding == self.MOUSE_LEFT
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                return binding == self.MOUSE_LEFT
+            if event.button == 2:
+                return binding == self.MOUSE_MIDDLE
+            if event.button == 3:
+                return binding == self.MOUSE_RIGHT
 
-        if event.type == pygame.JOYBUTTONDOWN and isinstance(binding, str) and binding.startswith("JOY_"):
+        if (
+            event.type == pygame.JOYBUTTONDOWN
+            and isinstance(binding, str)
+            and binding.startswith("JOY_")
+        ):
             button_index = int(binding.split("_")[1])
             return event.button == button_index
 
         return False
 
-
     def get_joystick(self):
         """Retourne la manette configurée pour ce manager, sinon None."""
         if self.joystick_index < 0:
             return None
-        #vérification que la manette existe toujours avec get_count(nombre de manette connectée)
+        # vérification que la manette existe toujours avec get_count(nombre de manette connectée)
         if pygame.joystick.get_count() <= self.joystick_index:
             return None
-        #création de l'objet joystick pour la manette avec l'index (0 pour la première manette, 1 pour la deuxième)
+        # création de l'objet joystick pour la manette avec l'index (0 pour la première manette, 1 pour la deuxième)
         joystick = pygame.joystick.Joystick(self.joystick_index)
-        #vérification que la manette est initialisée, sinon on l'initialise pour pouvoir l'utiliser
+        # vérification que la manette est initialisée, sinon on l'initialise pour pouvoir l'utiliser
         if not joystick.get_init():
             joystick.init()
         return joystick
@@ -71,17 +84,36 @@ class InputManager:
         """
         active_actions = []
         for event in events:
-            # 1. Gestion CLAVIER (KEYDOWN)
             if event.type == pygame.KEYDOWN:
+                print("INPUT KEYDOWN", event.key)
                 for action_name, key in self.key_map.items():
-                    if event.key == key:
+                    # Gère les listes de bindings (ex: crouch: [K_c, K_LCTRL, ...])
+                    if isinstance(key, (list, tuple, set)):
+                        if any(event.key == k for k in key if isinstance(k, int)):
+                            active_actions.append(action_name)
+                            if action_name == "crouch":
+                                print("INPUT KEYDOWN => crouch", event.key)
+                    elif event.key == key:
                         active_actions.append(action_name)
+                        if action_name == "crouch":
+                            print("INPUT KEYDOWN => crouch", event.key)
 
-            # 2. Gestion SOURIS (Appui unique)
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:  # 1 est le clic gauche
-                    for action_name, key in self.key_map.items():
-                        if key == self.MOUSE_LEFT:
+                for action_name, key in self.key_map.items():
+                    if isinstance(key, (list, tuple, set)):
+                        if any(
+                            (event.button == 1 and k == self.MOUSE_LEFT)
+                            or (event.button == 2 and k == self.MOUSE_MIDDLE)
+                            or (event.button == 3 and k == self.MOUSE_RIGHT)
+                            for k in key
+                        ):
+                            active_actions.append(action_name)
+                    else:
+                        if event.button == 1 and key == self.MOUSE_LEFT:
+                            active_actions.append(action_name)
+                        elif event.button == 2 and key == self.MOUSE_MIDDLE:
+                            active_actions.append(action_name)
+                        elif event.button == 3 and key == self.MOUSE_RIGHT:
                             active_actions.append(action_name)
 
             # 3. Gestion MANETTE (JOYBUTTONDOWN)
@@ -90,22 +122,21 @@ class InputManager:
                 joystick = self.get_joystick()
                 if joystick is not None and event.joy == joystick.get_instance_id():
                     for action_name, key in self.key_map.items():
-                        #l'inputmap utilise une convention "JOY_X" pour les boutons de manette, ou X est l'index du bouton (plus simple)
                         if isinstance(key, str) and key.startswith("JOY_"):
                             button_index = int(key.split("_")[1])
                             if event.button == button_index:
                                 active_actions.append(action_name)
 
         # Stick haut en appui unique (désactivé pour le moment)
-        #joystick = self.get_joystick()
-        #if joystick is not None:
+        # joystick = self.get_joystick()
+        # if joystick is not None:
 
         #    axis_y = joystick.get_axis(1)
         #    axis_up_active = axis_y < -self.AXIS_DEADZONE
         #    if axis_up_active and not self._axis_up_was_active and "top" in self.key_map:
         #        active_actions.append("top")
         #    self._axis_up_was_active = axis_up_active
-        #else:
+        # else:
         #    self._axis_up_was_active = False
         return active_actions
 
@@ -130,26 +161,65 @@ class InputManager:
             if isinstance(key, int) and key != -1:
                 if keys_pressed[key]:
                     active_actions.append(action_name)
-            # Si c'est notre constante de souris
-            elif key == self.MOUSE_LEFT:
-                if mouse_pressed[0]:  # 0 est l'index pour le clic gauche
+                continue
+
+            # Si c'est une souris
+            if key == self.MOUSE_LEFT:
+                if mouse_pressed[0]:
+                    active_actions.append(action_name)
+                continue
+
+            if key == self.MOUSE_MIDDLE:
+                if mouse_pressed[1]:
+                    active_actions.append(action_name)
+                continue
+
+            if key == self.MOUSE_RIGHT:
+                if mouse_pressed[2]:
+                    active_actions.append(action_name)
+                continue
+
+            # Multi-bindings (ex: crouch: [K_c, K_LCTRL, "MOUSE_RIGHT"])
+            if isinstance(key, (list, tuple, set)):
+                if any(
+                    (isinstance(k, int) and k != -1 and keys_pressed[k])
+                    or (k == self.MOUSE_LEFT and mouse_pressed[0])
+                    or (k == self.MOUSE_MIDDLE and mouse_pressed[1])
+                    or (k == self.MOUSE_RIGHT and mouse_pressed[2])
+                    for k in key
+                ):
                     active_actions.append(action_name)
 
         # Gestion du mouvement du stick gauche (manette 0) avec deadzone.
         joystick = self.get_joystick()
         if joystick is not None:
-
             axis_x = joystick.get_axis(0)
             axis_y = joystick.get_axis(1)
 
-            if axis_x < -self.AXIS_DEADZONE and "left" in self.key_map and "left" not in active_actions:
+            if (
+                axis_x < -self.AXIS_DEADZONE
+                and "left" in self.key_map
+                and "left" not in active_actions
+            ):
                 active_actions.append("left")
-            elif axis_x > self.AXIS_DEADZONE and "right" in self.key_map and "right" not in active_actions:
+            elif (
+                axis_x > self.AXIS_DEADZONE
+                and "right" in self.key_map
+                and "right" not in active_actions
+            ):
                 active_actions.append("right")
 
-            if axis_y < -self.AXIS_DEADZONE and "top" in self.key_map and "top" not in active_actions:
+            if (
+                axis_y < -self.AXIS_DEADZONE
+                and "top" in self.key_map
+                and "top" not in active_actions
+            ):
                 active_actions.append("top")
-            elif axis_y > self.AXIS_DEADZONE and "down" in self.key_map and "down" not in active_actions:
+            elif (
+                axis_y > self.AXIS_DEADZONE
+                and "down" in self.key_map
+                and "down" not in active_actions
+            ):
                 active_actions.append("down")
 
             # Gestion des boutons manette (appui unique / edge detection)
@@ -163,18 +233,20 @@ class InputManager:
                     button_index = int(key.split("_")[1])
 
                     is_down = joystick.get_button(button_index)
-                    was_down = self._joystick_button_was_down.get((self.joystick_index, button_index), False)
+                    was_down = self._joystick_button_was_down.get(
+                        (self.joystick_index, button_index), False
+                    )
 
                     # Front montant
                     if is_down and not was_down and action_name not in active_actions:
                         # Évite que les boutons manette déclenchent en continu des actions
-                        # qui sont déjà traitées à part (ex: top_manette via get_commands). 
+                        # qui sont déjà traitées à part (ex: top_manette via get_commands).
                         if action_name != "top_manette":
                             active_actions.append(action_name)
 
-
-                    self._joystick_button_was_down[(self.joystick_index, button_index)] = is_down
-
+                    self._joystick_button_was_down[
+                        (self.joystick_index, button_index)
+                    ] = is_down
 
         return active_actions
 

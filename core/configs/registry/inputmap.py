@@ -25,7 +25,7 @@ PLATFORMER_PHASE_KEYS_CONTROLLER_PLAYER = {
     "roll": pygame.K_KP_0,
     "roll_manette": "JOY_0",
     "shoot": "MOUSE_LEFT",
-    "crouch": pygame.K_RCTRL,
+    "crouch": pygame.K_KP_1,
 }
 
 

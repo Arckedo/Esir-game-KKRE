@@ -14,7 +14,7 @@ class UITimerBar:
         self.height = height
 
     def _get_role_and_colors(self):
-        is_thief = getattr(self.player, "skin_variant", None) == "player_red"
+        is_thief = getattr(self.player, "role_variant", None) == "player_red"
 
         if is_thief:
             bar_color = (60, 220, 140)
@@ -53,7 +53,7 @@ class UITimerBar:
             title_font = pygame.font.SysFont("Roboto", 15)
             timer_font = pygame.font.SysFont("Roboto", 24, bold=True)
 
-            label_player = "Player 2" if is_p2 else "Player 1"
+            label_player = "Joueur bleu" if is_p2 else "Joueur rouge"
             title_text = f"Temps {label_player}"
             timer_text = f"{chrono:0.1f}s"
 

@@ -60,6 +60,8 @@ class PlayerPlateformer(Player):
         # Chaque instance peut charger son propre dossier de skin.
         # Permet de brancher chaque instance sur un dossier de skin différent.
         self.skin_variant = skin_variant
+        # Le rôle peut changer sans toucher au skin affiché.
+        self.role_variant = skin_variant
 
         # --- Physique & Contrôles ---
 
@@ -252,7 +254,7 @@ class PlayerPlateformer(Player):
     def crouch(self) -> None:
         """Active l'état de crouch tant que la touche est maintenue."""
         print(
-            f"TBAG/CROUCH déclenché - Skin: {self.skin_variant}, OnGround: {self.movable.on_ground}"
+            f"TBAG/CROUCH déclenché - Skin: {self.skin_variant}, Role: {self.role_variant}, OnGround: {self.movable.on_ground}"
         )
 
         is_thief = (
@@ -262,16 +264,16 @@ class PlayerPlateformer(Player):
             and (
                 (
                     self == self.phase.player1
-                    and self.phase.player1.skin_variant == "player_red"
+                    and self.phase.player1.role_variant == "player_red"
                 )
                 or (
                     self == self.phase.player2
-                    and self.phase.player2.skin_variant == "player_red"
+                    and self.phase.player2.role_variant == "player_red"
                 )
             )
         )
 
-        print(f"  -> Is Thief: {is_thief}, Skin Variant: {self.skin_variant}")
+        print(f"  -> Is Thief: {is_thief}, Role Variant: {self.role_variant}")
 
         if is_thief:
             self.tbag_nombre += 1
@@ -315,11 +317,11 @@ class PlayerPlateformer(Player):
             and (
                 (
                     self == self.phase.player1
-                    and self.phase.player1.skin_variant == "player_red"
+                    and self.phase.player1.role_variant == "player_red"
                 )
                 or (
                     self == self.phase.player2
-                    and self.phase.player2.skin_variant == "player_red"
+                    and self.phase.player2.role_variant == "player_red"
                 )
             )
         )
@@ -496,6 +498,10 @@ class PlayerPlateformer(Player):
         """Permet de changer le skin du joueur en cours de jeu."""
         self.skin_variant = new_skin
         self._setup_animations()
+
+    def change_role(self, new_role: str) -> None:
+        """Change le rôle sans toucher au skin affiché."""
+        self.role_variant = new_role
 
     def jeu_gagne(self):
         """Ancienne condition basée sur tbag_nombre.

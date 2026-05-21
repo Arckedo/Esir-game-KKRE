@@ -261,12 +261,13 @@ class PlatformerPhase(GameState):
             self.player2.take_damage(1, source_pos=self.player1.rect.center)
 
             if not self.isplayerhit:
-                if self.player1.skin_variant == "player_red":
-                    self.player1.change_skin("player_blue")
-                    self.player2.change_skin("player_red")
+                if self.player1.role_variant == "player_red":
+                    self.player1.change_role("player_blue")
+                    self.player2.change_role("player_red")
+
                 else:
-                    self.player1.change_skin("player_red")
-                    self.player2.change_skin("player_blue")
+                    self.player1.change_role("player_red")
+                    self.player2.change_role("player_blue")
 
                 SoundManager.play("shoot", volume=2)
                 self.last_hit_time = pygame.time.get_ticks()
@@ -303,6 +304,15 @@ class PlatformerPhase(GameState):
         self.allsprites.custom_draw(world_view, render_offset, debug=self.debug_mode)
         self._draw_world_debug(world_view, render_offset)
 
+        if self.player1.role_variant == "player_red":
+            self.affichage_nom_player(
+                world_view, self.player1, "WANTED", render_offset, view_w, view_h
+            )
+        if self.player2.role_variant == "player_red":
+            self.affichage_nom_player(
+                world_view, self.player2, "WANTED", render_offset, view_w, view_h
+            )
+
         if view_w == screen_w and view_h == screen_h:
             screen.blit(world_view, (0, 0))
         else:
@@ -311,12 +321,7 @@ class PlatformerPhase(GameState):
             )
             screen.blit(scaled_world, (0, 0))
 
-        self.affichage_nom_player(
-            screen, self.player1, "1", render_offset, view_w, view_h
-        )
-        self.affichage_nom_player(
-            screen, self.player2, "2", render_offset, view_w, view_h
-        )
+        
 
         self._draw_debug_ui(screen, current_fps)
         self.timer_bar1.draw(screen, is_p2=False)
@@ -366,8 +371,8 @@ class PlatformerPhase(GameState):
         dt = game.dt
         chasse_rate = 1.0
 
-        p1_is_thief = self.player1.skin_variant == "player_red"
-        p2_is_thief = self.player2.skin_variant == "player_red"
+        p1_is_thief = self.player1.role_variant == "player_red"
+        p2_is_thief = self.player2.role_variant == "player_red"
 
         if not p1_is_thief:
             self.player1.chrono -= chasse_rate * dt
@@ -403,9 +408,7 @@ class PlatformerPhase(GameState):
             game.manager.pop()
             game.manager.push(EndGamePhase(winner))
 
-    def affichage_nom_player(
-        self, screen, player, label, render_offset, view_w, view_h
-    ):
+    def affichage_nom_player(self, screen, player, label, render_offset, view_w, view_h):
         """Affiche un label centré au-dessus d'un joueur."""
         if not pygame.font.get_init():
             pygame.font.init()
